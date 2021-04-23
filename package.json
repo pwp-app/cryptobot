@@ -1,0 +1,21 @@
+{
+  "name": "cryptobot",
+  "version": "0.1.0",
+  "description": "在QQ群里快速查看币价",
+  "main": "main.js",
+  "author": "BackRunner",
+  "license": "MIT",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=dev yarn koishi start",
+    "start": "cross-env NODE_ENV=prod yarn koishi start"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "https-proxy-agent": "^5.0.0",
+    "koishi": "^3.9.2"
+  },
+  "dependencies": {
+    "ccxt": "^1.48.47",
+    "koishi-adapter-onebot": "^3.0.8"
+  }
+}
