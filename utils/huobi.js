@@ -25,8 +25,8 @@ const hFetchSpotPrice = async (symbol) => {
     res = await huobi.request('/market/detail/merged', 'market', 'get', {
       symbol,
     });
-  } catch {
-    console.error('Failed to fetch spot price from huobi.');
+  } catch (err) {
+    console.error('Failed to fetch spot price from huobi.', err);
   }
   if (res) {
     return {

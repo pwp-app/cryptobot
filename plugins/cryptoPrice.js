@@ -34,8 +34,8 @@ module.exports = (ctx) => {
         } else {
           price = await fetchSpotPrice(symbol.toUpperCase());
         }
-      } catch {
-        console.error('Failed to fetch price.');
+      } catch (err) {
+        console.error('Failed to fetch price.', err);
         return next();
       }
       if (price) {
@@ -45,8 +45,8 @@ module.exports = (ctx) => {
       let price;
       try {
         price = await fetchFuturesPrice(symbol.toUpperCase());
-      } catch {
-        console.error('Failed to fetch price.');
+      } catch (err) {
+        console.error('Failed to fetch price.', err);
       }
       if (price) {
         return await session.send(buildMessage({ name: coin, type: 'futures' }, price));
