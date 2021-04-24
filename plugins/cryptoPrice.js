@@ -1,12 +1,7 @@
 const { fetchSpotPrice, fetchFuturesPrice, fetchSpotLatest } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
 const { buildMessage } = require('../utils/message');
-
-const HUOBI_LIST = [
-  'ht',
-  'husd',
-];
-
+const HUOBI_LIST = require('../constants/huobiList');
 
 const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？$/;
 
