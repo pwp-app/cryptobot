@@ -12,7 +12,16 @@ const formatNumber = (num) => {
 }
 
 const buildMessage = (coin, price) => {
-  const output = [`【${COIN_TYPE[coin.type]}】${coin.name.toUpperCase()}${coin.type === 'spot' ? '/' : ''}USDT`];
+  const output = [];
+  if (coin.includes('/')) {
+    let name = coin.name.toUpperCase();
+    if (coin.type !== 'spot') {
+      name = name.replace('/', '');
+    }
+    output.push(`【${COIN_TYPE[coin.type]}】${name}`);
+  } else {
+    output.push(`【${COIN_TYPE[coin.type]}】${coin.name.toUpperCase()}${coin.type === 'spot' ? '/' : ''}USDT`);
+  }
   const highPrice = parseFloat(price.highPrice, 10);
   const lowPrice = parseFloat(price.lowPrice, 10);
   const lastPrice = parseFloat(price.lastPrice, 10);
