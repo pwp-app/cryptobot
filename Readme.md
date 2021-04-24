@@ -12,7 +12,7 @@
 
 ## Features
 
-基于 Binance 的 24hr 价格情况查询
+基于 Binance 的 24hr 价格情况查询 （部分 Binance 未上架币种基于 Huobi Pro 查询）
 
 ## License
 
