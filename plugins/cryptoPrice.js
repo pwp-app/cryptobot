@@ -11,9 +11,10 @@ module.exports = (ctx) => {
       return next();
     }
     const coin = formattedContent.substr(0, formattedContent.length - 1);
-    let symbol = `${coin}usdt`.toUpperCase();
     if (symbol.includes('/')) {
       symbol = symbol.replace('/', '');
+    } else {
+      symbol = `${coin}usdt`.toUpperCase();
     }
     if (formattedContent.endsWith('?') || formattedContent.endsWith('？')) {
       let price;
