@@ -12,7 +12,7 @@
 
 ## Features
 
-基于 Binance 的 24h 均价查询
+基于 Binance 的 24hr 价格情况查询
 
 ## License
 
