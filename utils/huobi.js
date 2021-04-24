@@ -35,8 +35,8 @@ const hFetchSpotPrice = async (symbol) => {
       lastPrice: res.close,
       priceChange: res.close - res.open,
       priceChangePercent: (((res.close - res.open) / res.open) * 100).toFixed(2),
-      volume: vol,
-      quoteVolume: amount,
+      volume: res.vol,
+      quoteVolume: res.amount,
     };
   }
   return null;
