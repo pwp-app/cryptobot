@@ -27,7 +27,17 @@ const fetchFuturesPrice = async (symbol) => {
   return await binance.request('ticker/24hr', 'fapiPublic', 'get', { symbol });
 }
 
+const fetchSpotLatest = async (symbol) => {
+  return await binance.request('ticker/price', 'public', 'get', { symbol });
+}
+
+const fetchFuturesLatest = async (symbol) => {
+  return await binance.request('ticker/price', 'fapiPublic', 'get', { symbol });
+}
+
 module.exports = {
   fetchSpotPrice,
   fetchFuturesPrice,
+  fetchSpotLatest,
+  fetchFuturesLatest,
 };

@@ -15,12 +15,12 @@ const buildMessage = (coin, price) => {
   const output = [`【${COIN_TYPE[coin.type]}】${coin.name.toUpperCase()}${coin.type === 'spot' ? '/' : ''}USDT`];
   const highPrice = parseFloat(price.highPrice, 10);
   const lowPrice = parseFloat(price.lowPrice, 10);
-  const avgPrice = parseFloat(price.weightedAvgPrice, 10);
-  const lowDistance = avgPrice - lowPrice;
-  const highDistance = highPrice - avgPrice;
-  const lowDistancePercent = ((avgPrice - lowPrice) / avgPrice) * 100;
-  const highDistancePercent = ((highPrice - avgPrice) / highPrice) * 100;
-  output.push(`当前均价: ${avgPrice}`);
+  const latestPrice = parseFloat(price.latestPrice, 10);
+  const lowDistance = latestPrice - lowPrice;
+  const highDistance = highPrice - latestPrice;
+  const lowDistancePercent = ((latestPrice - lowPrice) / lowPrice) * 100;
+  const highDistancePercent = ((highPrice - latestPrice) / highPrice) * 100;
+  output.push(`当前价格: ${latestPrice}`);
   output.push(`24小时变化: ${parseFloat(price.priceChange, 10)} ${price.priceChangePercent}%`);
   output.push(`24小时交易量: ${parseFloat(price.volume, 10)} ${coin.name.toUpperCase()}`);
   output.push(`24小时交易额: ${parseFloat(price.quoteVolume, 10)} USD`);
