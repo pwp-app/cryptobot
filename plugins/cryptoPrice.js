@@ -1,7 +1,7 @@
 const { fetchSpotPrice, fetchFuturesPrice, fetchSpotLatest } = require('../utils/binance');
 const { buildMessage } = require('../utils/message');
 
-const coinTester = /^[A-Za-z]+\?|\$$/;
+const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？$/;
 
 module.exports = (ctx) => {
   ctx.middleware(async (session, next) => {
@@ -11,8 +11,11 @@ module.exports = (ctx) => {
       return next();
     }
     const coin = formattedContent.substr(0, formattedContent.length - 1);
-    const symbol = `${coin}usdt`.toUpperCase();
-    if (formattedContent.endsWith('?')) {
+    let symbol = `${coin}usdt`.toUpperCase();
+    if (symbol.includes('/')) {
+      symbol = symbol.replace('/', '');
+    }
+    if (formattedContent.endsWith('?') || formattedContent.endsWith('？')) {
       let price;
       try {
         price = await fetchSpotPrice(symbol);
