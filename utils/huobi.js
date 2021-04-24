@@ -29,6 +29,7 @@ const hFetchSpotPrice = async (symbol) => {
     console.error('Failed to fetch spot price from huobi.', err);
   }
   if (res) {
+    console.log(res);
     return {
       lowPrice: res.low,
       highPrice: res.high,
