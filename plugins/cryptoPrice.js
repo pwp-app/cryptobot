@@ -13,7 +13,7 @@ module.exports = (ctx) => {
     const coin = formattedContent.substr(0, formattedContent.length - 1);
     let symbol = coin;
     if (symbol.includes('/')) {
-      symbol = symbol.replace('/', '');
+      symbol = symbol.replace('/', '').toUpperCase();
     } else {
       symbol = `${coin}usdt`.toUpperCase();
     }
