@@ -3,8 +3,12 @@ const COIN_TYPE = {
   futures: '合约',
 };
 
-const formatNumber = (num) => {
-  let formatted = `${num}`;
+const formatNumber = (numStr) => {
+  let formatted = numStr;
+  let number = parseFloat(numStr, 10);
+  if (number === 0) {
+    return '0.00';
+  }
   while (formatted.endsWith(0)) {
     formatted = formatted.substr(0, formatted.length - 1);
   }
