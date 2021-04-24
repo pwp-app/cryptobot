@@ -13,7 +13,7 @@ const formatNumber = (num) => {
 
 const buildMessage = (coin, price) => {
   const output = [];
-  if (coin.includes('/')) {
+  if (coin.name.includes('/')) {
     let name = coin.name.toUpperCase();
     if (coin.type !== 'spot') {
       name = name.replace('/', '');
