@@ -22,7 +22,7 @@ if (process.env.NODE_ENV === 'dev') {
 const hFetchSpotPrice = async (symbol) => {
   let res;
   try {
-    res = await huobi.request('market/detail/merged', 'market', 'get', {
+    res = await huobi.request('detail/merged', 'market', 'get', {
       symbol,
     });
   } catch (err) {
