@@ -29,15 +29,15 @@ const hFetchSpotPrice = async (symbol) => {
     console.error('Failed to fetch spot price from huobi.', err);
   }
   if (res) {
-    console.log(res);
+    const { tick } = res;
     return {
-      lowPrice: res.low,
-      highPrice: res.high,
-      lastPrice: res.close,
-      priceChange: res.close - res.open,
-      priceChangePercent: (((res.close - res.open) / res.open) * 100).toFixed(2),
-      volume: res.vol,
-      quoteVolume: res.amount,
+      lowPrice: tick.low,
+      highPrice: tick.high,
+      lastPrice: tick.close,
+      priceChange: tick.close - tick.open,
+      priceChangePercent: (((tick.close - tick.open) / tick.open) * 100).toFixed(2),
+      volume: tick.vol,
+      quoteVolume: tick.amount,
     };
   }
   return null;
