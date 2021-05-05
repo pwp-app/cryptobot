@@ -15,6 +15,7 @@
     "koishi": "^3.10.2"
   },
   "dependencies": {
+    "@backrunner/levelatomic": "^0.1.0",
     "ccxt": "^1.49.53",
     "koishi-adapter-onebot": "^3.0.8",
     "levelatomic": "file:../levelatomic",

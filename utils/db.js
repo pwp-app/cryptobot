@@ -1,6 +1,6 @@
 const levelup = require('levelup');
 const leveldown = require('leveldown');
-const levelatomic = require('levelatomic');
+const levelatomic = require('@backrunner/levelatomic');
 const path = require('path');
 const fs = require('fs');
 
