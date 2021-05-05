@@ -1,6 +1,7 @@
-const { fetchSpotPrice, fetchFuturesPrice, fetchSpotLatest } = require('../utils/binance');
+const { fetchSpotPrice, fetchFuturesPrice } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
 const { buildMessage } = require('../utils/message');
+const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
 const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？$/;
@@ -14,14 +15,7 @@ module.exports = (ctx) => {
       return next();
     }
     const coin = formattedContent.substr(0, formattedContent.length - 1);
-    let coinName = coin.toLowerCase();
-    let symbol = coin;
-    if (symbol.includes('/')) {
-      coinName = symbol.split('/')[0];
-      symbol = symbol.replace('/', '');
-    } else {
-      symbol = `${coin}usdt`;
-    }
+    const { coinName, symbol } = getSymbol(coin);
     if (formattedContent.endsWith('?') || formattedContent.endsWith('？')) {
       let price;
       try {
