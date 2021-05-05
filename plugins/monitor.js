@@ -150,7 +150,7 @@ module.exports = async (ctx) => {
       }
     });
     if (!myTasks.length) {
-      await _.session.send(`${segment.at(_.session.userId)} 您没有设置任何价格提醒`);
+      await _.session.send(`${segment.at(_.session.userId)}您没有设置任何价格提醒`);
       return;
     }
     let message = '';
