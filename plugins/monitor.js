@@ -91,7 +91,7 @@ module.exports.name = 'crypto-price-monitor';
 module.exports = async (ctx) => {
   await initTasks.call(ctx.bots[0]);
   // add command
-  ctx.app.command('monitor <coin> <type> <price>').action(async (_, coin, type, price) => {
+  ctx.command('monitor <coin> <type> <price>', '监控某个币的现货价格并给出提醒 (type支持lt/gt)').action(async (_, coin, type, price) => {
     const buildMessage = (msg) => {
       let message = msg;
       if (_.session.subtype === 'group') {
@@ -145,7 +145,7 @@ module.exports = async (ctx) => {
     await db.supdate(storeKey, JSON.stringify(tasks));
     await _.session.send(buildMessage('价格提醒已创建'));
   });
-  ctx.app.command('my-monitors').action(async (_) => {
+  ctx.command('my-monitors', '查询已创建的价格提醒').action(async (_) => {
     const { userId } = _.session;
     const myTasks = [];
     tasks.forEach((task) => {
@@ -168,7 +168,7 @@ module.exports = async (ctx) => {
     });
     await _.session.send(message);
   });
-  ctx.app.command('remove-monitor <id>').action(async (_, id) => {
+  ctx.command('remove-monitor <id>', '根据ID移除价格提醒').action(async (_, id) => {
     const buildMessage = (msg) => {
       let message = msg;
       if (_.session.subtype === 'group') {

@@ -30,7 +30,7 @@ const saveStars = async () => {
 module.exports.name = 'crypto-star-list';
 module.exports = async (ctx) => {
   await initStars();
-  ctx.app.command('star <coin>').action(async (_, coin) => {
+  ctx.command('star <coin>', '将某个币添加至关注').action(async (_, coin) => {
     const { subtype, userId } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
@@ -67,7 +67,7 @@ module.exports = async (ctx) => {
     await saveStars();
     await _.session.send(buildMessage('关注成功'));
   });
-  ctx.app.command('remove-star <coin>').action(async (_, coin) => {
+  ctx.command('remove-star <coin>', '移除关注').action(async (_, coin) => {
     const { subtype, userId } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
@@ -85,7 +85,7 @@ module.exports = async (ctx) => {
     stars[userId].splice(idx, 1);
     await _.session.send(buildMessage('已取消关注'));
   });
-  ctx.app.command('my-stars').action(async (_) => {
+  ctx.command('my-stars', '查询我的关注').action(async (_) => {
     const { subtype, userId } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
