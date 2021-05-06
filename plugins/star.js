@@ -33,8 +33,7 @@ module.exports = async (ctx) => {
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
-        message =
-          segment.at(userId) + message;
+        message = segment.at(userId) + message;
       }
       return message;
     };
@@ -59,7 +58,7 @@ module.exports = async (ctx) => {
       stars[userId] = [];
     }
     if (stars[userId].includes(coinName)) {
-      await _.session.send(buildMessage('您已经关注了这个币'))
+      await _.session.send(buildMessage('您已经关注了这个币'));
       return;
     }
     stars[userId].push(coinName);
@@ -71,14 +70,13 @@ module.exports = async (ctx) => {
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
-        message =
-          segment.at(userId) + message;
+        message = segment.at(userId) + message;
       }
       return message;
     };
     const { coinName } = getSymbol(coin);
     if (!stars[userId] || !stars[userId].includes(coinName)) {
-      await _.session.send(buildMessage('您没有关注这个币'))
+      await _.session.send(buildMessage('您没有关注这个币'));
       return;
     }
     const idx = stars[userId].indexOf(coinName);
@@ -90,8 +88,7 @@ module.exports = async (ctx) => {
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
-        message =
-          segment.at(userId) + message;
+        message = segment.at(userId) + message;
       }
       return message;
     };
@@ -100,25 +97,39 @@ module.exports = async (ctx) => {
       await _.session.send(buildMessage('您没有关注任何币'));
       return;
     }
+    // fetch price
     let coins = [];
-    for (const coinName of myStars) {
-      const { symbol } = getSymbol(coinName);
-      let price;
-      if (HUOBI_LIST.includes(symbol)) {
-        price = await hFetchSpotPrice(symbol);
-      } else {
-        price = await fetchSpotPrice(symbol.toUpperCase());
-      }
-      if (price) {
-        coins.push(`${coinName.toUpperCase()} ${price.lastPrice} ${price.priceChangePercent}%`);
-      } else {
-        coins.push(`${coinName.toUpperCase()} 获取失败`);
-      }
-    }
+    await Promise.all(
+      myStars.map((coinName, idx) => {
+        return new Promise(async (resolve) => {
+          const { symbol } = getSymbol(coinName);
+          let price;
+          if (HUOBI_LIST.includes(symbol)) {
+            price = await hFetchSpotPrice(symbol);
+          } else {
+            price = await fetchSpotPrice(symbol.toUpperCase());
+          }
+          if (price) {
+            coins.push({
+              idx,
+              msg: `${coinName.toUpperCase()} ${price.lastPrice} ${price.priceChangePercent}%`,
+            });
+          } else {
+            coins.push({
+              idx,
+              msg: `${coinName.toUpperCase()} 获取失败`,
+            });
+          }
+          resolve();
+        });
+      })
+    );
+    // build message
+    coins.sort((a, b) => a.idx - b.idx);
     let starsMsg = '您的关注: ';
-    coins.forEach((str, index) => {
-      starsMsg += `\n[${index + 1}] ${str}`;
+    coins.forEach((item, index) => {
+      starsMsg += `\n[${index + 1}] ${item.msg}`;
     });
     await _.session.send(buildMessage(starsMsg));
   });
-}
+};
