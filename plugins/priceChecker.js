@@ -4,13 +4,14 @@ const {
   fetchLongShortPosition,
   fetchTopLongShortAccount,
   fetchGlobalLongShortAccount,
+  fetchDepth,
 } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
-const { buildMessage } = require('../utils/message');
+const { buildMessage, formatNumber } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
-const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？|#$/;
+const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？|#|\*$/;
 
 module.exports.name = 'Crypto Currency Price Checker';
 module.exports = (ctx) => {
@@ -99,6 +100,22 @@ module.exports = (ctx) => {
         message += `\n全局多空人数比 ${lsGA[idx].longShortRatio} ${lsGAPercent[0]}% ${lsGAPercent[1]}%`;
       });
       await session.send(message);
+    } else if (formattedContent.endsWith('*')) {
+      // query depth
+      if (!HUOBI_LIST.includes(coinName)) {
+        const depth = await fetchDepth(symbol.toUpperCase());
+        console.log(depth);
+        let { bids, asks } = depth;
+        let message = `${coinName.toUpperCase()} 现货交易深度`;
+        asks = asks.reverse();
+        asks.forEach((item, idx) => {
+          message += `\n卖${5 - idx} ${formatNumber(item[0])} ${formatNumber(item[1])}`;
+        });
+        bids.forEach((item, idx) => {
+          message += `\n买${idx + 1} ${formatNumber(item[0])} ${formatNumber(item[1])}`;
+        });
+        await session.send(message);
+      }
     }
     return next();
   });

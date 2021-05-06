@@ -55,7 +55,7 @@ const fetchTopLongShortAccount = async (symbol, period) => {
     return null;
   }
   return res[0];
-}
+};
 
 const fetchGlobalLongShortAccount = async (symbol, period) => {
   let res;
@@ -68,6 +68,10 @@ const fetchGlobalLongShortAccount = async (symbol, period) => {
   return res[0];
 };
 
+const fetchDepth = async (symbol) => {
+  return await binance.request('depth', 'public', 'get', { symbol, limit: 5 });
+};
+
 module.exports = {
   fetchSpotPrice,
   fetchFuturesPrice,
@@ -76,4 +80,5 @@ module.exports = {
   fetchLongShortPosition,
   fetchTopLongShortAccount,
   fetchGlobalLongShortAccount,
+  fetchDepth,
 };
