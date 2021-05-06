@@ -1,10 +1,10 @@
 const HUOBI_LIST = require('../constants/huobiList');
 const { fetchSpotPrice } = require('../utils/binance');
 const { getSymbol } = require('../utils/coin');
-const db = require('../utils/db');
 const { hFetchSpotPrice } = require('../utils/huobi');
+const db = require('../utils/db');
 
-const stars = {};
+let stars = {};
 
 const storeKey = 'coin_stars';
 
@@ -40,12 +40,16 @@ module.exports = async (ctx) => {
     // try to fetch price
     const { coinName, symbol } = getSymbol(coin);
     try {
+      let coinPrice;
       if (HUOBI_LIST.includes(coinName)) {
-        coinPrice = parseFloat((await hFetchSpotPrice(symbol)).lastPrice, 10);
+        coinPrice = await hFetchSpotPrice(symbol);
       } else {
-        coinPrice = parseFloat((await fetchSpotLatest(symbol.toUpperCase())).price, 10);
+        coinPrice = await fetchSpotPrice(symbol.toUpperCase());
       }
-    } catch {
+      if (!coinPrice) {
+        await _.session.send(buildMessage('首次获取价格失败，请重试'));
+      }
+    } catch (err) {
       await _.session.send(buildMessage('首次获取价格失败，请重试'));
       return;
     }
@@ -62,6 +66,7 @@ module.exports = async (ctx) => {
     await _.session.send(buildMessage('关注成功'));
   });
   ctx.app.command('remove-star <coin>').action(async (_, coin) => {
+    const { subtype } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
@@ -81,6 +86,7 @@ module.exports = async (ctx) => {
     await _.sesion.send(buildMessage('已取消关注'));
   });
   ctx.app.command('my-stars').action(async (_) => {
+    const { subtype } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
@@ -101,17 +107,17 @@ module.exports = async (ctx) => {
       if (HUOBI_LIST.includes(symbol)) {
         price = await hFetchSpotPrice(symbol);
       } else {
-        price = await fetchSpotPrice(symbol);
+        price = await fetchSpotPrice(symbol.toUpperCase());
       }
       if (price) {
-        coins += `${coinName.toUpperCase()} ${price.lastPrice} ${price.priceChangePercent}%`;
+        coins.push(`${coinName.toUpperCase()} ${price.lastPrice} ${price.priceChangePercent}%`);
       } else {
-        coins += `${coinName.toUpperCase()} 获取失败`;
+        coins.push(`${coinName.toUpperCase()} 获取失败`);
       }
     }
-    const starsMsg = '您的关注: ';
+    let starsMsg = '您的关注: ';
     coins.forEach((str, index) => {
-      starsMsg += `\n[${index}] ${str}`;
+      starsMsg += `\n[${index + 1}] ${str}`;
     });
     await _.session.send(buildMessage(starsMsg));
   });

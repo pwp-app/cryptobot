@@ -114,10 +114,14 @@ module.exports = async (ctx) => {
     // try to fetch once
     const { coinName, symbol } = getSymbol(coin);
     try {
+      let coinPrice;
       if (HUOBI_LIST.includes(coinName)) {
-        coinPrice = parseFloat((await hFetchSpotPrice(symbol)).lastPrice, 10);
+        coinPrice = await hFetchSpotPrice(symbol);
       } else {
-        coinPrice = parseFloat((await fetchSpotLatest(symbol.toUpperCase())).price, 10);
+        coinPrice = await fetchSpotLatest(symbol.toUpperCase());
+      }
+      if (!coinPrice) {
+        await _.session.send(buildMessage('首次获取价格失败，请重新创建提醒'));
       }
     } catch {
       await _.session.send(buildMessage('首次获取价格失败，请重新创建提醒'));
