@@ -87,7 +87,7 @@ const initTasks = async function () {
   }
 };
 
-module.exports.name = 'Crypto Currency Price Monitor';
+module.exports.name = 'crypto-price-monitor';
 module.exports = async (ctx) => {
   await initTasks.call(ctx.bots[0]);
   // add command

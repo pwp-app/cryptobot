@@ -13,7 +13,7 @@ const HUOBI_LIST = require('../constants/huobiList');
 
 const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？|#|\*$/;
 
-module.exports.name = 'Crypto Currency Price Checker';
+module.exports.name = 'crypto-price-checker';
 module.exports = (ctx) => {
   ctx.middleware(async (session, next) => {
     const { content } = session;

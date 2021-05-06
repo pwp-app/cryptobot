@@ -27,6 +27,7 @@ const saveStars = async () => {
   await db.supdate(storeKey, JSON.stringify(stars));
 };
 
+module.exports.name = 'crypto-star-list';
 module.exports = async (ctx) => {
   await initStars();
   ctx.app.command('star <coin>').action(async (_, coin) => {
