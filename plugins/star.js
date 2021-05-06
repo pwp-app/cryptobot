@@ -1,4 +1,5 @@
 const HUOBI_LIST = require('../constants/huobiList');
+const { segment } = require('koishi-utils');
 const { fetchSpotPrice } = require('../utils/binance');
 const { getSymbol } = require('../utils/coin');
 const { hFetchSpotPrice } = require('../utils/huobi');
