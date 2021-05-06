@@ -39,7 +39,7 @@ const createMonitorTask = function ({ id, coin, type, price, userId, channelId }
             channelId.includes('private')
               ? ''
               : segment.at(userId)
-          }${coin.toUpperCase()} 已经上涨至 ${originPriceData} (${price})`
+          }${coin.toUpperCase()} 已经上涨至 ${coinPrice} (${price})`
         );
         for (let i = 0; i < tasks.length; i++) {
           const task = tasks[i];
@@ -58,7 +58,7 @@ const createMonitorTask = function ({ id, coin, type, price, userId, channelId }
             channelId.includes('private')
               ? ''
               : segment.at(userId)
-          }${coin.toUpperCase()} 已经下跌至 ${originPriceData} (${price})`
+          }${coin.toUpperCase()} 已经下跌至 ${coinPrice} (${price})`
         );
         for (let i = 0; i < tasks.length; i++) {
           const task = tasks[i];
