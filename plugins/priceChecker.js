@@ -62,7 +62,7 @@ module.exports = (ctx) => {
           });
         }
       };
-      const period = ['5m', '15m', '1h', '1d'];
+      const period = ['15m', '1d'];
       const promises = [];
       const lsPosition = [];
       const lsAccount = [];
