@@ -27,20 +27,18 @@ const hFetchSpotPrice = async (symbol) => {
     });
   } catch (err) {
     console.error('Failed to fetch spot price from huobi.', err);
+    return null;
   }
-  if (res) {
-    const { tick } = res;
-    return {
-      lowPrice: tick.low,
-      highPrice: tick.high,
-      lastPrice: tick.close,
-      priceChange: tick.close - tick.open,
-      priceChangePercent: (((tick.close - tick.open) / tick.open) * 100).toFixed(2),
-      volume: tick.amount,
-      quoteVolume: tick.vol,
-    };
-  }
-  return null;
+  const { tick } = res;
+  return {
+    lowPrice: tick.low,
+    highPrice: tick.high,
+    lastPrice: tick.close,
+    priceChange: tick.close - tick.open,
+    priceChangePercent: (((tick.close - tick.open) / tick.open) * 100).toFixed(2),
+    volume: tick.amount,
+    quoteVolume: tick.vol,
+  };
 };
 
 module.exports = {
