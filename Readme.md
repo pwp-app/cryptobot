@@ -14,6 +14,10 @@
 
 基于 Binance 的 24hr 价格情况查询 （部分 Binance 未上架币种基于 Huobi Pro 查询）
 
+一次性的价格监控提醒
+
+关注列表
+
 ## License
 
 MIT
