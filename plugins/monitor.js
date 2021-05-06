@@ -14,7 +14,7 @@ let tasks = [];
 const taskMap = {};
 
 const createMonitorTask = function ({ id, coin, type, price, userId, channelId }) {
-  const task = cron.schedule('*/2 * * * * *', async () => {
+  const task = cron.schedule('*/1 * * * * *', async () => {
     const { coinName, symbol } = getSymbol(coin);
     let coinPrice;
     let originPriceData;
