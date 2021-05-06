@@ -1,10 +1,16 @@
-const { fetchSpotPrice, fetchFuturesPrice } = require('../utils/binance');
+const {
+  fetchSpotPrice,
+  fetchFuturesPrice,
+  fetchLongShortPosition,
+  fetchTopLongShortAccount,
+  fetchGlobalLongShortAccount,
+} = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
 const { buildMessage } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
-const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？$/;
+const coinTester = /^[A-Za-z]+(\/?[A-Za-z]+)?\?|\$|？|#$/;
 
 module.exports.name = 'Crypto Currency Price Checker';
 module.exports = (ctx) => {
@@ -41,6 +47,58 @@ module.exports = (ctx) => {
       if (price) {
         return await session.send(buildMessage({ name: coin, type: 'futures' }, price));
       }
+    } else if (formattedContent.endsWith('#')) {
+      if (HUOBI_LIST.includes(coinName)) {
+        await session.send('不支持该币种 (Huobi only)');
+        return;
+      }
+      // fetch data
+      const fetch = async (fn, target, idx, ...args) => {
+        const res = await fn(...args);
+        if (res) {
+          target.push({
+            ...res,
+            idx,
+          });
+        }
+      };
+      const period = ['5m', '15m', '1h', '1d'];
+      const promises = [];
+      const lsPosition = [];
+      const lsAccount = [];
+      const lsGA = [];
+      period.forEach((v, idx) => {
+        promises.push(fetch(fetchLongShortPosition, lsPosition, idx, symbol.toUpperCase(), v));
+        promises.push(fetch(fetchTopLongShortAccount, lsAccount, idx, symbol.toUpperCase(), v));
+        promises.push(fetch(fetchGlobalLongShortAccount, lsGA, idx, symbol.toUpperCase(), v));
+      });
+      try {
+        await Promise.all(promises);
+      } catch (err) {
+        console.error('Failed to fetch long short data.', err);
+      }
+      if (lsPosition.length !== period.length || lsAccount.length !== period.length || lsGA.length !== period.length) {
+        await session.send('数据获取失败');
+        return;
+      }
+      // sort data
+      const sorter = (a, b) => a.idx - b.idx;
+      lsPosition.sort(sorter);
+      lsAccount.sort(sorter);
+      lsGA.sort(sorter);
+      // build message
+      let message = `${coinName.toUpperCase()} 合约持仓情况统计`;
+      const getPercent = (s) => (parseFloat(s, 10) * 100).toFixed(2);
+      period.forEach((p, idx) => {
+        message += `\n[${p}]`;
+        const lsPositionPercent = [getPercent(lsPosition[idx].longAccount), getPercent(lsPosition[idx].shortAccount)];
+        message += `\n大户多空持仓比 ${lsPosition[idx].longShortRatio} ${lsPositionPercent[0]}% ${lsPositionPercent[1]}%`;
+        const lsAccountPercent = [getPercent(lsAccount[idx].longAccount), getPercent(lsAccount[idx].shortAccount)];
+        message += `\n大户多空人数比 ${lsAccount[idx].longShortRatio} ${lsAccountPercent[0]}% ${lsAccountPercent[1]}%`;
+        const lsGAPercent = [getPercent(lsGA[idx].longAccount), getPercent(lsGA[idx].shortAccount)];
+        message += `\n全局多空人数比 ${lsGA[idx].longShortRatio} ${lsGAPercent[0]}% ${lsGAPercent[1]}%`;
+      });
+      await session.send(message);
     }
     return next();
   });

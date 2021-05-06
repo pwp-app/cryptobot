@@ -25,19 +25,55 @@ const fetchSpotPrice = async (symbol) => {
 
 const fetchFuturesPrice = async (symbol) => {
   return await binance.request('ticker/24hr', 'fapiPublic', 'get', { symbol });
-}
+};
 
 const fetchSpotLatest = async (symbol) => {
   return await binance.request('ticker/price', 'public', 'get', { symbol });
-}
+};
 
 const fetchFuturesLatest = async (symbol) => {
   return await binance.request('ticker/price', 'fapiPublic', 'get', { symbol });
+};
+
+const fetchLongShortPosition = async (symbol, period) => {
+  let res;
+  try {
+    res = await binance.request('topLongShortPositionRatio', 'fapiData', 'get', { symbol, period, limit: 1 });
+  } catch (err) {
+    console.error('Failed to fetch long short position data.', err);
+    return null;
+  }
+  return res[0];
+};
+
+const fetchTopLongShortAccount = async (symbol, period) => {
+  let res;
+  try {
+    res = await binance.request('topLongShortAccountRatio', 'fapiData', 'get', { symbol, period, limit: 1 });
+  } catch (err) {
+    console.error('Failed to fetch global long short account data.', err);
+    return null;
+  }
+  return res[0];
 }
+
+const fetchGlobalLongShortAccount = async (symbol, period) => {
+  let res;
+  try {
+    res = await binance.request('globalLongShortAccountRatio', 'fapiData', 'get', { symbol, period, limit: 1 });
+  } catch (err) {
+    console.error('Failed to fetch global long short account data.', err);
+    return null;
+  }
+  return res[0];
+};
 
 module.exports = {
   fetchSpotPrice,
   fetchFuturesPrice,
   fetchSpotLatest,
   fetchFuturesLatest,
+  fetchLongShortPosition,
+  fetchTopLongShortAccount,
+  fetchGlobalLongShortAccount,
 };
