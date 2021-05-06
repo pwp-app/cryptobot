@@ -10,6 +10,9 @@ const formatNumber = (numStr) => {
     return '0.00';
   }
   while (formatted.endsWith(0)) {
+    if (formatted.length > 2 && formatted[formatted.length - 2] === '.') {
+      break;
+    }
     formatted = formatted.substr(0, formatted.length - 1);
   }
   return formatted;
