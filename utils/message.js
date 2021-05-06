@@ -4,7 +4,7 @@ const COIN_TYPE = {
 };
 
 const formatNumber = (numStr) => {
-  let formatted = numStr;
+  let formatted = `${numStr}`;
   let number = parseFloat(numStr, 10);
   if (number === 0) {
     return '0.00';
@@ -48,5 +48,6 @@ const buildMessage = (coin, price) => {
 };
 
 module.exports = {
+  formatNumber,
   buildMessage,
 };

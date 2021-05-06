@@ -3,6 +3,7 @@ const { segment } = require('koishi-utils');
 const { fetchSpotPrice } = require('../utils/binance');
 const { getSymbol } = require('../utils/coin');
 const { hFetchSpotPrice } = require('../utils/huobi');
+const { formatNumber } = require('../utils/message');
 const db = require('../utils/db');
 
 let stars = {};
@@ -112,7 +113,7 @@ module.exports = async (ctx) => {
           if (price) {
             coins.push({
               idx,
-              msg: `${coinName.toUpperCase()} ${price.lastPrice} ${price.priceChangePercent}%`,
+              msg: `${coinName.toUpperCase()} ${formatNumber(price.lastPrice)} ${price.priceChangePercent}%`,
             });
           } else {
             coins.push({
