@@ -66,7 +66,7 @@ module.exports = async (ctx) => {
     await _.session.send(buildMessage('关注成功'));
   });
   ctx.app.command('remove-star <coin>').action(async (_, coin) => {
-    const { subtype } = _.session;
+    const { subtype, userId } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
@@ -75,7 +75,6 @@ module.exports = async (ctx) => {
       }
       return message;
     };
-    const { userId } = _.session;
     const { coinName } = getSymbol(coin);
     if (!stars[userId] || !stars[userId].includes(coinName)) {
       await _.session.send(buildMessage('您没有关注这个币'))
@@ -83,10 +82,10 @@ module.exports = async (ctx) => {
     }
     const idx = stars[userId].indexOf(coinName);
     stars[userId].splice(idx, 1);
-    await _.sesion.send(buildMessage('已取消关注'));
+    await _.session.send(buildMessage('已取消关注'));
   });
   ctx.app.command('my-stars').action(async (_) => {
-    const { subtype } = _.session;
+    const { subtype, userId } = _.session;
     const buildMessage = (msg) => {
       let message = msg;
       if (subtype === 'group') {
@@ -95,7 +94,7 @@ module.exports = async (ctx) => {
       }
       return message;
     };
-    const myStars = stars[_.session.userId];
+    const myStars = stars[userId];
     if (!myStars || !myStars.length) {
       await _.session.send(buildMessage('您没有关注任何币'));
       return;
