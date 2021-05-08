@@ -443,7 +443,7 @@ module.exports = async (ctx) => {
       }
       message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(
         position.amount
-      )} / ${formatNumber(position.availableAmount)}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现收益: ${
+      )} / ${formatNumber(position.availableAmount)}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
