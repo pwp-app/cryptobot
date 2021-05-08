@@ -11,6 +11,7 @@ let futuresData = {};
 
 const INIT_MONEY = 10000.0;
 const STORE_KEY = 'sim_trade_data';
+const FUTURES_STORE_KEY = 'sim_trade_futures';
 
 const initUserData = async function () {
   try {
@@ -23,11 +24,22 @@ const initUserData = async function () {
   // init order monitors
   Object.keys(userData).forEach((userId) => {
     const user = userData[userId];
-    user.orders && Object.keys(user.orders).forEach((orderId) => {
-      const order = user.orders[orderId];
-      addOrderMonitor.call(this, order);
-    });
+    user.orders &&
+      Object.keys(user.orders).forEach((orderId) => {
+        const order = user.orders[orderId];
+        addOrderMonitor.call(this, order);
+      });
   });
+};
+
+const initFuturesData = async function () {
+  try {
+    futuresData = JSON.parse(await db.get(FUTURES_STORE_KEY));
+  } catch (err) {
+    if (!err.notFound) {
+      throw err;
+    }
+  }
 };
 
 const saveUserData = async () => {
@@ -44,8 +56,12 @@ const initUser = async (userId, groupId) => {
     createTime: Date.now(),
     groupId,
   };
+  if (futuresData[userId]) {
+    delete futuresData[userId];
+  }
   await saveUserData();
-}
+  await saveFuturesData();
+};
 
 const checkUser = async (session) => {
   const { userId } = session;
@@ -54,6 +70,19 @@ const checkUser = async (session) => {
     return false;
   }
   return true;
+};
+
+const checkFutures = async (session) => {
+  const { userId } = session;
+  if (!futuresData[userId]) {
+    await send(session, '未找到合约账户，请先划转资金以创建账户');
+    return false;
+  }
+  return true;
+};
+
+const saveFuturesData = async () => {
+  await db.supdate(FUTURES_STORE_KEY, JSON.stringify(futuresData));
 };
 
 const getPositionsValue = async (userId) => {
@@ -93,11 +122,8 @@ const getPositionsValue = async (userId) => {
 
 const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amount, channelId }) {
   const sendMessage = async (message) => {
-    await this.sendMessage(
-      channelId,
-      `${channelId.includes('private') ? '' : segment.at(userId)}${message}`
-    );
-  }
+    await this.sendMessage(channelId, `${channelId.includes('private') ? '' : segment.at(userId)}${message}`);
+  };
   const handler = async ({ price: lastPrice }) => {
     // deal
     if (type === 'buy' && lastPrice <= price) {
@@ -232,6 +258,7 @@ const placeOrder = async (session, { type, coin, price, amount }) => {
 module.exports.name = 'crypto-sim-trade';
 module.exports = async (ctx) => {
   await initUserData.call(ctx.bots[0]);
+  await initFuturesData.call(ctx.bots[0]);
   ctx.command('init-trade', '初始化模拟交易（重复调用会重置数据）').action(async (_) => {
     const { session } = _;
     const { subtype, userId } = session;
@@ -251,12 +278,64 @@ module.exports = async (ctx) => {
     await initUser(userId, groupId);
     await send(session, '模拟交易(Beta) 用户数据初始化完成');
   });
-  // ctx.command('trans-to-futures <amount>', '从钱包划转至模拟合约账户', () => {
-
-  // });
-  // ctx.command('trans-to-wallet <amount>', '从模拟合约账户划转至钱包', () => {
-
-  // });
+  ctx.command('trans-to-futures <amount>', '从钱包划转至模拟合约账户').action((_, amount) => {
+    const { session } = _;
+    if (!checkUser(session)) {
+      return;
+    }
+    // validate amount
+    let parsedAmount = parseFloat(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await send(session, '');
+      return;
+    }
+    // transfer money to futures
+    if (parsedAmount > user.availableMoney) {
+      await send(session, '可用资金不足，无法划转');
+      return;
+    }
+    user.money -= amount;
+    user.availableMoney -= amount;
+    if (!futuresData[userId]) {
+      futuresData[userId] = {
+        money: parsedAmount,
+        availableMoney: parsedAmount,
+        orders: {},
+        positions: {},
+      };
+    } else {
+      futuresData[userId].money += parsedAmount;
+      futuresData[userId].availableMoney += parsedAmount;
+    }
+    await saveUserData();
+    await saveFuturesData();
+    await send(session, '资金划转成功');
+  });
+  ctx.command('trans-to-wallet <amount>', '从模拟合约账户划转至钱包').action((_, amount) => {
+    const { session } = _;
+    if (!checkUser(session) || !checkFutures(session)) {
+      return;
+    }
+    // validate amount
+    const parsedAmount = parseFloat(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await send(session, '数量不合法');
+      return;
+    }
+    // check account money
+    const user = futuresData[userId];
+    if (parsedAmount > user.availableMoney) {
+      await send(session, '可用资金不足，无法划转');
+      return;
+    }
+    user.money -= parsedAmount;
+    user.availableMoney -= parsedAmount;
+    userData[userId].money += parsedAmount;
+    userData[userId].availableMoney += parsedAmount;
+    await saveUserData();
+    await saveFuturesData();
+    await send(session, '资金划转成功');
+  });
   ctx.command('buy <amount> <coin> [at] [price]', '模拟购买限价/市价买入现货').action(async (_, amount, coin, at, price) => {
     const { session } = _;
     if (!checkUser(session)) {
@@ -441,9 +520,9 @@ module.exports = async (ctx) => {
       if (!position) {
         return;
       }
-      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(
-        position.amount
-      )} / ${formatNumber(position.availableAmount)}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现收益: ${
+      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(position.amount)} / ${formatNumber(
+        position.availableAmount
+      )}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现收益: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
@@ -461,10 +540,12 @@ module.exports = async (ctx) => {
       await send(session, '您没有设置任何订单');
       return;
     }
-    let message = '您的订单:'
+    let message = '您的订单:';
     orderIds.forEach((id, index) => {
       const order = orders[id];
-      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(order.amount)} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
+      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(
+        order.amount
+      )} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
     });
     await send(session, message);
   });
