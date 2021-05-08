@@ -50,6 +50,7 @@ const buildPriceMessage = (coin, price) => {
 };
 
 const send = async (session, msg) => {
+  const { subtype, userId } = session;
   let message = msg;
   if (subtype === 'group') {
     message = segment.at(userId) + message;
