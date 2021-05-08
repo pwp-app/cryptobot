@@ -1,10 +1,7 @@
-const cron = require('node-cron');
 const { customAlphabet } = require('nanoid');
 const { segment } = require('koishi-utils');
-const { fetchSpotLatest } = require('../utils/binance');
-const { hFetchSpotPrice } = require('../utils/huobi');
-const { getSymbol } = require('../utils/coin');
-const HUOBI_LIST = require('../constants/huobiList');
+const { addMontior, removeMonitor } = require('../utils/monitor');
+const { checkCoin } = require('../utils/coin');
 const db = require('../utils/db');
 
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 6);
@@ -13,64 +10,37 @@ const storeKey = 'monitor_tasks';
 let tasks = [];
 const taskMap = {};
 
+const removeTask = (id) => {
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    if (task.id === id) {
+      tasks.splice(i, 1);
+      break;
+    }
+  }
+};
+
 const createMonitorTask = function ({ id, coin, type, price, userId, channelId }) {
-  const task = cron.schedule('*/1 * * * * *', async () => {
-    const { coinName, symbol } = getSymbol(coin);
-    let coinPrice;
-    let originPriceData;
-    try {
-      if (HUOBI_LIST.includes(coinName)) {
-        originPriceData = (await hFetchSpotPrice(symbol)).lastPrice;
-        coinPrice = parseFloat(originPriceData, 10);
-      } else {
-        originPriceData = (await fetchSpotLatest(symbol.toUpperCase())).price;
-        coinPrice = parseFloat(originPriceData, 10);
-      }
-    } catch {
-      console.error('Failed to fetch price in task.');
-      return;
+  const sendMessage = async (coinPrice) => {
+    await this.sendMessage(
+      channelId,
+      `${
+        channelId.includes('private')
+          ? ''
+          : segment.at(userId)
+      }${coin.toUpperCase()} 已经${type === 'gt' ? '上涨' : '下跌'}至 ${coinPrice} (${price})`
+    );
+  }
+  const handler = async ({ price: coinPrice }) => {
+    if ((type === 'gt' && coinPrice >= price) || (type === 'lt' && coinPrice <= price)) {
+      removeMonitor(coin, handler);
+      removeTask(id);
+      await sendMessage(coinPrice);
+      await db.supdate(storeKey, JSON.stringify(tasks));
     }
-    if (type === 'gt') {
-      if (coinPrice >= price) {
-        task.stop();
-        await this.sendMessage(
-          channelId,
-          `${
-            channelId.includes('private')
-              ? ''
-              : segment.at(userId)
-          }${coin.toUpperCase()} 已经上涨至 ${coinPrice} (${price})`
-        );
-        for (let i = 0; i < tasks.length; i++) {
-          const task = tasks[i];
-          if (task.id === id) {
-            tasks.splice(i, 1);
-          }
-        }
-        await db.supdate(storeKey, JSON.stringify(tasks));
-      }
-    } else if (type === 'lt') {
-      if (coinPrice <= price) {
-        task.stop();
-        await this.sendMessage(
-          channelId,
-          `${
-            channelId.includes('private')
-              ? ''
-              : segment.at(userId)
-          }${coin.toUpperCase()} 已经下跌至 ${coinPrice} (${price})`
-        );
-        for (let i = 0; i < tasks.length; i++) {
-          const task = tasks[i];
-          if (task.id === id) {
-            tasks.splice(i, 1);
-          }
-        }
-        await db.supdate(storeKey, JSON.stringify(tasks));
-      }
-    }
-  });
-  taskMap[id] = task;
+  };
+  addMontior(coin, handler);
+  taskMap[id] = true;
 };
 
 const initTasks = async function () {
@@ -111,22 +81,12 @@ module.exports = async (ctx) => {
       await _.session.send(buildMessage('Price 不合法'));
       return;
     }
-    // try to fetch once
-    const { coinName, symbol } = getSymbol(coin);
-    try {
-      let coinPrice;
-      if (HUOBI_LIST.includes(coinName)) {
-        coinPrice = await hFetchSpotPrice(symbol);
-      } else {
-        coinPrice = await fetchSpotLatest(symbol.toUpperCase());
-      }
-      if (!coinPrice) {
-        await _.session.send(buildMessage('首次获取价格失败，请重新创建提醒'));
-      }
-    } catch {
-      await _.session.send(buildMessage('首次获取价格失败，请重新创建提醒'));
+    // check coin
+    if (!await checkCoin(coin)) {
+      await _.session.send(buildMessage('有效性检查失败，请重试'));
       return;
-    }
+    };
+    // create a monitor task
     const { userId, channelId } = _.session;
     let taskId = nanoid();
     while (taskMap[taskId]) {

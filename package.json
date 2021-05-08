@@ -21,7 +21,6 @@
     "levelatomic": "file:../levelatomic",
     "leveldown": "^6.0.0",
     "levelup": "^5.0.0",
-    "nanoid": "^3.1.22",
-    "node-cron": "^3.0.0"
+    "nanoid": "^3.1.22"
   }
 }

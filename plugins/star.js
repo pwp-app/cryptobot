@@ -40,21 +40,10 @@ module.exports = async (ctx) => {
       return message;
     };
     // try to fetch price
-    const { coinName, symbol } = getSymbol(coin);
-    try {
-      let coinPrice;
-      if (HUOBI_LIST.includes(coinName)) {
-        coinPrice = await hFetchSpotPrice(symbol);
-      } else {
-        coinPrice = await fetchSpotPrice(symbol.toUpperCase());
-      }
-      if (!coinPrice) {
-        await _.session.send(buildMessage('首次获取价格失败，请重试'));
-      }
-    } catch (err) {
-      await _.session.send(buildMessage('首次获取价格失败，请重试'));
+    if (!await checkCoin(coin)) {
+      await _.session.send(buildMessage('有效性检查失败，请重试'));
       return;
-    }
+    };
     // add to star
     if (!stars[userId]) {
       stars[userId] = [];
