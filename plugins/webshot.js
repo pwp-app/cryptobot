@@ -20,7 +20,7 @@ const launchBrowser = async () => {
 module.exports = async (ctx) => {
   await launchBrowser();
   ctx
-    .command('kline <coin>', '查看某种币的K线')
+    .command('chart <coin>', '查看某种币的K线')
     .option('period', '-p <period>')
     .action(async (_, coin) => {
       // check coin
