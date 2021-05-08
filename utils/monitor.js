@@ -20,6 +20,9 @@ const addMontior = (coin, handler) => {
     monitorDeps[symbol] += 1;
   }
   if (monitors[symbol]) {
+    if (handler && typeof handler === 'function') {
+      priceEvents.on(symbol, handler);
+    }
     return;
   }
   // set up interval
