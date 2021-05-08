@@ -104,7 +104,6 @@ module.exports = (ctx) => {
       // query depth
       if (!HUOBI_LIST.includes(coinName)) {
         const depth = await fetchDepth(symbol.toUpperCase());
-        console.log(depth);
         let { bids, asks } = depth;
         let message = `${coinName.toUpperCase()} 现货交易深度`;
         asks = asks.reverse();
