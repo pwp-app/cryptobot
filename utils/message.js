@@ -7,6 +7,9 @@ const COIN_TYPE = {
 
 const formatNumber = (numStr) => {
   let formatted = `${numStr}`;
+  if (!formatted.includes('.')) {
+    return formatted;
+  }
   let number = parseFloat(numStr, 10);
   if (number === 0) {
     return '0.00';
