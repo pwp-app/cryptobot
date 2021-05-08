@@ -1,11 +1,10 @@
-const { customAlphabet } = require('nanoid');
 const { addMontior, removeMonitor } = require('../utils/monitor');
 const { checkCoin } = require('../utils/coin');
 const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
+const { nanoid } = require('../utils/nanoid');
 const db = require('../utils/db');
 
-const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 6);
 const storeKey = 'monitor_tasks';
 
 let tasks = [];

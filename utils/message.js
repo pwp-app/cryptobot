@@ -21,7 +21,18 @@ const formatNumber = (numStr) => {
     formatted = formatted.substr(0, formatted.length - 1);
   }
   return formatted;
-}
+};
+
+const fixedNumber = (numStr, count = 6) => {
+  if (!numStr.includes('.')) {
+    return;
+  }
+  const parts = numStr.split('.');
+  if (parts[1].length > count) {
+    parts[1] = parts[1].substr(0, count);
+  }
+  return parts.join('.');
+};
 
 const buildPriceMessage = (coin, price) => {
   const output = [];
@@ -64,5 +75,6 @@ const send = async (session, msg) => {
 module.exports = {
   send,
   formatNumber,
+  fixedNumber,
   buildPriceMessage,
 };
