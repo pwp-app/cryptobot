@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "在QQ群里快速查看币价",
   "main": "main.js",
   "author": "BackRunner",
