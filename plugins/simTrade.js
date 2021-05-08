@@ -3,9 +3,11 @@ const { send, formatNumber, fixedNumber } = require('../utils/message');
 const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
 const { shortNanoId } = require('../utils/nanoid');
+const { segment } = require('koishi-utils');
 const db = require('../utils/db');
 
 let userData = {};
+let futuresData = {};
 
 const INIT_MONEY = 10000.0;
 const STORE_KEY = 'sim_trade_data';
@@ -120,13 +122,16 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
       }
       user.orders[orderId] = null;
       delete user.orders[orderId];
-      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
       await saveUserData();
       removeMonitor(coin, handler);
+      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
     } else if (type === 'sell' && lastPrice >= price) {
       const user = userData[userId];
       const { symbol } = getSymbol(coin);
       const position = user.positions[symbol];
+      if (!position) {
+        return;
+      }
       // consume position amount
       const remainAmount = position.amount - amount;
       if (remainAmount <= 0) {
@@ -143,9 +148,9 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
       user.availableMoney += selledMoney;
       user.orders[orderId] = null;
       delete user.orders[orderId];
-      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
       await saveUserData();
       removeMonitor(coin, handler);
+      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
     }
   };
   addMontior(coin, handler);
@@ -246,6 +251,12 @@ module.exports = async (ctx) => {
     await initUser(userId, groupId);
     await send(session, '模拟交易(Beta) 用户数据初始化完成');
   });
+  // ctx.command('trans-to-futures <amount>', '从钱包划转至模拟合约账户', () => {
+
+  // });
+  // ctx.command('trans-to-wallet <amount>', '从模拟合约账户划转至钱包', () => {
+
+  // });
   ctx.command('buy <amount> <coin> [at] [price]', '模拟购买限价/市价买入现货').action(async (_, amount, coin, at, price) => {
     const { session } = _;
     if (!checkUser(session)) {
