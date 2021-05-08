@@ -2,6 +2,7 @@ const { customAlphabet } = require('nanoid');
 const { addMontior, removeMonitor } = require('../utils/monitor');
 const { checkCoin } = require('../utils/coin');
 const { send } = require('../utils/message');
+const { segment } = require('koishi-utils');
 const db = require('../utils/db');
 
 const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 6);
