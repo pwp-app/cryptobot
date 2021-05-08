@@ -98,7 +98,6 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
   }
   const handler = async ({ price: lastPrice }) => {
     // deal
-    console.log(lastPrice, price);
     if (type === 'buy' && lastPrice <= price) {
       const user = userData[userId];
       const consume = price * amount;
