@@ -69,7 +69,7 @@ const send = async (session, msg) => {
   if (subtype === 'group') {
     message = segment.at(userId) + message;
   }
-  await session.send(msg);
+  await session.send(message);
 };
 
 module.exports = {
