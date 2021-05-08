@@ -151,6 +151,79 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
   addMontior(coin, handler);
 };
 
+const placeOrder = async (session, { type, coin, price, amount }) => {
+  if (!checkUser(session)) {
+    return;
+  }
+  if (type !== 'buy' && type !== 'sell') {
+    await send(session, '请输入正确的类型');
+    return;
+  }
+  const parsedPrice = parseFloat(price, 10);
+  if (isNaN(parsedPrice) || parsedPrice <= 0) {
+    await send(session, '价格不合法');
+    return;
+  }
+  const parsedAmount = parseFloat(amount, 10);
+  if (isNaN(parsedAmount) || parsedAmount <= 0) {
+    await send(session, '数量不合法');
+    return;
+  }
+  // check coin
+  if (!checkCoin(coin)) {
+    await send(session, '请检查输入的币名');
+    return;
+  }
+  const lowerCaseCoin = coin.toLowerCase();
+  if (lowerCaseCoin.includes('/') && !lowerCaseCoin.endsWith('usdt')) {
+    await send(session, '模拟交易仅支持 币/USDT 交易对');
+    return;
+  }
+  // place order
+  const { userId } = session;
+  const user = userData[userId];
+  if (type === 'buy') {
+    // check user available money
+    const consume = parsedPrice * parsedAmount;
+    if (consume > user.availableMoney) {
+      await send(session, `可用资金不足 (可用: ${user.availableMoney} USDT)`);
+      return;
+    }
+    user.availableMoney -= consume;
+  } else if (type === 'sell') {
+    const { symbol } = getSymbol(coin);
+    const position = user.positions[symbol];
+    if (!position) {
+      await session.send('您没有对应的持仓');
+      return;
+    }
+    if (parsedAmount > position.availableAmount) {
+      await session.send('超出最大可售量，无法挂单');
+      return;
+    }
+    position.availableAmount -= parsedAmount;
+  }
+  // add order to user
+  let orderId = shortNanoId();
+  while (user.orders[orderId]) {
+    orderId = shortNanoId();
+  }
+  const order = {
+    id: orderId,
+    userId,
+    coin: lowerCaseCoin,
+    type,
+    price: parsedPrice,
+    amount: parsedAmount,
+    channelId: session.channelId,
+  };
+  user.orders[orderId] = order;
+  await saveUserData();
+  // start monitor
+  addOrderMonitor.call(session.bot, order);
+  await send(session, '挂单成功');
+};
+
 module.exports.name = 'crypto-sim-trade';
 module.exports = async (ctx) => {
   await initUserData.call(ctx.bots[0]);
@@ -173,10 +246,17 @@ module.exports = async (ctx) => {
     await initUser(userId, groupId);
     await send(session, '模拟交易(Beta) 用户数据初始化完成');
   });
-  ctx.command('buy <amount> <coin>', '模拟市价购买现货').action(async (_, amount, coin) => {
+  ctx.command('buy <amount> <coin> [at] [price]', '模拟购买限价/市价买入现货').action(async (_, amount, coin, at, price) => {
     const { session } = _;
     if (!checkUser(session)) {
       return;
+    }
+    if (at && at !== 'at') {
+      await send(session, '命令格式错误');
+      return;
+    }
+    if (at === 'at') {
+      return await placeOrder(session, { type: 'buy', coin, price, amount });
     }
     const parsedAmount = parseFloat(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -189,15 +269,15 @@ module.exports = async (ctx) => {
       return;
     }
     const { symbol } = getSymbol(coin);
-    const price = await getLatestPrice(coin);
-    if (!price) {
+    const latestPrice = await getLatestPrice(coin);
+    if (!latestPrice) {
       await send(session, '价格获取失败');
       return;
     }
     // check account money
     const { userId } = session;
     const user = userData[userId];
-    const consumeAmount = price * parsedAmount;
+    const consumeAmount = latestPrice * parsedAmount;
     if (consumeAmount > user.money) {
       await send(session, `资金不足 (可用: ${user.availableMoney})`);
       return;
@@ -209,31 +289,38 @@ module.exports = async (ctx) => {
       user.positions[symbol] = {
         amount: parsedAmount,
         availableAmount: parsedAmount,
-        avgCost: price,
+        avgCost: latestPrice,
       };
     } else {
       const { amount: storedAmount, avgCost: storedAvgCost, availableAmount: storedAvailableAmount } = user.positions[symbol];
       user.positions[symbol] = {
         amount: storedAmount + parsedAmount,
         availableAmount: storedAvailableAmount + parsedAmount,
-        avgCost: (storedAmount * storedAvgCost + parsedAmount * price) / (storedAmount + parsedAmount),
+        avgCost: (storedAmount * storedAvgCost + parsedAmount * latestPrice) / (storedAmount + parsedAmount),
       };
     }
     await saveUserData();
-    await send(session, `市价购入成功 (${formatNumber(price)} * ${formatNumber(parsedAmount)})`);
+    await send(session, `市价购入成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)})`);
   });
-  ctx.command('sell <amount> <coin>', '模拟市价卖出现货').action(async (_, amount, coin) => {
+  ctx.command('sell <amount> <coin> [at] [price]', '模拟购买限价/市价卖出现货').action(async (_, amount, coin, at, price) => {
     const { session } = _;
     if (!checkUser(session)) {
       return;
+    }
+    if (at && at !== 'at') {
+      await send(session, '命令格式错误');
+      return;
+    }
+    if (at === 'at') {
+      return await placeOrder(session, { type: 'sell', coin, price, amount });
     }
     const parsedAmount = parseFloat(amount, 10);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       await send(session, '数量不合法');
       return;
     }
-    const price = await getLatestPrice(coin);
-    if (!price) {
+    const latestPrice = await getLatestPrice(coin);
+    if (!latestPrice) {
       await send(session, '价格获取失败');
       return;
     }
@@ -257,89 +344,16 @@ module.exports = async (ctx) => {
       delete user.positions[symbol];
     } else {
       // calc avg cost
-      position.avgCost = (position.amount * position.avgCost - parsedAmount * price) / remainAmount;
+      position.avgCost = (position.amount * position.avgCost - parsedAmount * latestPrice) / remainAmount;
       position.amount = remainAmount;
       position.availableAmount = position.availableAmount - parsedAmount;
     }
     // remove money
-    const selledMoney = price * parsedAmount;
+    const selledMoney = latestPrice * parsedAmount;
     user.money += selledMoney;
     user.availableMoney += selledMoney;
     await saveUserData();
-    await send(session, `市价卖出成功 (${formatNumber(price)} * ${formatNumber(parsedAmount)})`);
-  });
-  ctx.command('make-order <type> <amount> <coin> <price> [price2]', '模拟现货挂单限价交易 (type: buy/sell)').action(async (_, type, amount, coin, price, price2) => {
-    const { session } = _;
-    if (!checkUser(session)) {
-      return;
-    }
-    if (type !== 'buy' && type !== 'sell') {
-      await send(session, '请输入正确的类型');
-      return;
-    }
-    const parsedPrice = parseFloat(price === 'at' ? price2 : price, 10);
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      await send(session, '价格不合法');
-      return;
-    }
-    const parsedAmount = parseFloat(amount, 10);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      await send(session, '数量不合法');
-      return;
-    }
-    // check coin
-    if (!checkCoin(coin)) {
-      await send(session, '请检查输入的币名');
-      return;
-    }
-    const lowerCaseCoin = coin.toLowerCase();
-    if (lowerCaseCoin.includes('/') && !lowerCaseCoin.endsWith('usdt')) {
-      await send(session, '模拟交易仅支持 币/USDT 交易对');
-      return;
-    }
-    // place order
-    const { userId } = session;
-    const user = userData[userId];
-    if (type === 'buy') {
-      // check user available money
-      const consume = parsedPrice * parsedAmount;
-      if (consume > user.availableMoney) {
-        await send(session, `可用资金不足 (可用: ${user.availableMoney} USDT)`);
-        return;
-      }
-      user.availableMoney -= consume;
-    } else if (type === 'sell') {
-      const { symbol } = getSymbol(coin);
-      const position = user.positions[symbol];
-      if (!position) {
-        await session.send('您没有对应的持仓');
-        return;
-      }
-      if (parsedAmount > position.availableAmount) {
-        await session.send('超出最大可售量，无法挂单');
-        return;
-      }
-      position.availableAmount -= parsedAmount;
-    }
-    // add order to user
-    let orderId = shortNanoId();
-    while (user.orders[orderId]) {
-      orderId = shortNanoId();
-    }
-    const order = {
-      id: orderId,
-      userId,
-      coin: lowerCaseCoin,
-      type,
-      price: parsedPrice,
-      amount: parsedAmount,
-      channelId: session.channelId,
-    };
-    user.orders[orderId] = order;
-    await saveUserData();
-    // start monitor
-    addOrderMonitor.call(ctx.bots[0], order);
-    await send(session, '挂单成功');
+    await send(session, `市价卖出成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)})`);
   });
   ctx.command('cancel-order <orderId>', '撤销模拟交易中的订单').action(async (_, orderId) => {
     const { session } = _;

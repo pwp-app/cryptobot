@@ -93,7 +93,7 @@ module.exports = async (ctx) => {
       channelId,
     };
     tasks.push(opts);
-    createMonitorTask.call(ctx.bots[0], opts);
+    createMonitorTask.call(session.bot, opts);
     await db.supdate(storeKey, JSON.stringify(tasks));
     await await send(_.session, '价格提醒已创建');
   });
