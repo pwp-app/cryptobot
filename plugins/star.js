@@ -1,9 +1,8 @@
 const HUOBI_LIST = require('../constants/huobiList');
-const { segment } = require('koishi-utils');
 const { fetchSpotPrice } = require('../utils/binance');
 const { getSymbol } = require('../utils/coin');
 const { hFetchSpotPrice } = require('../utils/huobi');
-const { formatNumber } = require('../utils/message');
+const { formatNumber, send } = require('../utils/message');
 const db = require('../utils/db');
 
 let stars = {};
@@ -31,17 +30,10 @@ module.exports.name = 'crypto-star-list';
 module.exports = async (ctx) => {
   await initStars();
   ctx.command('star <coin>', '将某个币添加至关注').action(async (_, coin) => {
-    const { subtype, userId } = _.session;
-    const buildMessage = (msg) => {
-      let message = msg;
-      if (subtype === 'group') {
-        message = segment.at(userId) + message;
-      }
-      return message;
-    };
+    const { userId } = _.session;
     // try to fetch price
     if (!await checkCoin(coin)) {
-      await _.session.send(buildMessage('有效性检查失败，请重试'));
+      await send(_.session, '有效性检查失败，请重试');
       return;
     };
     // add to star
@@ -49,43 +41,29 @@ module.exports = async (ctx) => {
       stars[userId] = [];
     }
     if (stars[userId].includes(coinName)) {
-      await _.session.send(buildMessage('您已经关注了这个币'));
+      await send(_.session, '您已经关注了这个币');
       return;
     }
     stars[userId].push(coinName);
     await saveStars();
-    await _.session.send(buildMessage('关注成功'));
+    await send(_.session, '关注成功');
   });
   ctx.command('remove-star <coin>', '移除关注').action(async (_, coin) => {
-    const { subtype, userId } = _.session;
-    const buildMessage = (msg) => {
-      let message = msg;
-      if (subtype === 'group') {
-        message = segment.at(userId) + message;
-      }
-      return message;
-    };
+    const { userId } = _.session;
     const { coinName } = getSymbol(coin);
     if (!stars[userId] || !stars[userId].includes(coinName)) {
-      await _.session.send(buildMessage('您没有关注这个币'));
+      await send(_.session, '您没有关注这个币');
       return;
     }
     const idx = stars[userId].indexOf(coinName);
     stars[userId].splice(idx, 1);
-    await _.session.send(buildMessage('已取消关注'));
+    await send(_.session, '已取消关注');
   });
   ctx.command('my-stars', '查询我的关注').action(async (_) => {
-    const { subtype, userId } = _.session;
-    const buildMessage = (msg) => {
-      let message = msg;
-      if (subtype === 'group') {
-        message = segment.at(userId) + message;
-      }
-      return message;
-    };
+    const { userId } = _.session;
     const myStars = stars[userId];
     if (!myStars || !myStars.length) {
-      await _.session.send(buildMessage('您没有关注任何币'));
+      await send(_.session, '您没有关注任何币');
       return;
     }
     // fetch price
@@ -121,6 +99,6 @@ module.exports = async (ctx) => {
     coins.forEach((item, index) => {
       starsMsg += `\n[${index + 1}] ${item.msg}`;
     });
-    await _.session.send(buildMessage(starsMsg));
+    await send(_.session, starsMsg);
   });
 };

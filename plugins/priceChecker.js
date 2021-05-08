@@ -7,7 +7,7 @@ const {
   fetchDepth,
 } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
-const { buildMessage, formatNumber } = require('../utils/message');
+const { buildPriceMessage, formatNumber } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
@@ -36,7 +36,7 @@ module.exports = (ctx) => {
         return next();
       }
       if (price) {
-        return await session.send(buildMessage({ name: coin, type: 'spot' }, price));
+        return await session.send(buildPriceMessage({ name: coin, type: 'spot' }, price));
       }
     } else if (formattedContent.endsWith('$')) {
       let price;
@@ -46,7 +46,7 @@ module.exports = (ctx) => {
         console.error('Failed to fetch price.', err);
       }
       if (price) {
-        return await session.send(buildMessage({ name: coin, type: 'futures' }, price));
+        return await session.send(buildPriceMessage({ name: coin, type: 'futures' }, price));
       }
     } else if (formattedContent.endsWith('#')) {
       if (HUOBI_LIST.includes(coinName)) {

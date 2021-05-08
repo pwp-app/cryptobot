@@ -1,3 +1,5 @@
+const { segment } = require('koishi-utils');
+
 const COIN_TYPE = {
   spot: '现货',
   futures: '合约',
@@ -18,7 +20,7 @@ const formatNumber = (numStr) => {
   return formatted;
 }
 
-const buildMessage = (coin, price) => {
+const buildPriceMessage = (coin, price) => {
   const output = [];
   if (coin.name.includes('/')) {
     let name = coin.name.toUpperCase();
@@ -47,7 +49,16 @@ const buildMessage = (coin, price) => {
   return output.join('\n');
 };
 
+const send = async (session, msg) => {
+  let message = msg;
+  if (subtype === 'group') {
+    message = segment.at(userId) + message;
+  }
+  await session.send(msg);
+};
+
 module.exports = {
+  send,
   formatNumber,
-  buildMessage,
+  buildPriceMessage,
 };

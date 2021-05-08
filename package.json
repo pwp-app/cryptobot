@@ -1,7 +1,7 @@
 {
   "name": "cryptobot",
   "version": "0.2.1",
-  "description": "在QQ群里快速查看币价",
+  "description": "View crypto currency price in QQ group",
   "main": "main.js",
   "author": "BackRunner",
   "license": "MIT",
