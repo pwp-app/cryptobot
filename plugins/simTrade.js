@@ -255,6 +255,16 @@ const placeOrder = async (session, { type, coin, price, amount }) => {
   await send(session, '挂单成功');
 };
 
+// create position at specific price
+const placeFutureOrder = (session, { type, ratio, amount, coin, price, opType }) => {
+
+};
+
+// create position at current last price
+const dealFuture = (session, { type, ratio, amount, coin, opType }) => {
+
+};
+
 module.exports.name = 'crypto-sim-trade';
 module.exports = async (ctx) => {
   await initUserData.call(ctx.bots[0]);
@@ -278,7 +288,7 @@ module.exports = async (ctx) => {
     await initUser(userId, groupId);
     await send(session, '模拟交易(Beta) 用户数据初始化完成');
   });
-  ctx.command('trans-to-futures <amount>', '从钱包划转至模拟合约账户').action((_, amount) => {
+  ctx.command('trans-to-futures <amount>', '从钱包划转至模拟杠杆账户').action((_, amount) => {
     const { session } = _;
     if (!checkUser(session)) {
       return;
@@ -300,7 +310,7 @@ module.exports = async (ctx) => {
       futuresData[userId] = {
         money: parsedAmount,
         availableMoney: parsedAmount,
-        orders: {},
+        trusts: {},
         positions: {},
       };
     } else {
@@ -445,7 +455,115 @@ module.exports = async (ctx) => {
     await saveUserData();
     await send(session, `市价卖出成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)})`);
   });
-  ctx.command('cancel-order <orderId>', '撤销模拟交易中的订单').action(async (_, orderId) => {
+  ctx.command('long <amount> <coin> <ratio> [at] [price]', '').action(async (_, amount, coin, ratio, at, price) => {
+    const { session } = _;
+    if (!checkUser(session) || !checkFutures(session)) {
+      return;
+    }
+    // check coin
+    const lowerCaseCoin = coin.toLowerCase();
+    if (lowerCaseCoin.includes('/') && !lowerCaseCoin.endsWith('usdt')) {
+      await send(session, '模拟交易仅支持 币/USDT 交易对');
+      return;
+    }
+    // parse number
+    const parsedAmount = parseFloat(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await send(session, '数量不合法');
+      return;
+    }
+    const parsedRatio = parseFloat(ratio, 10);
+    if (isNaN(parsedRatio) || parsedRatio < 1 || parsedRatio > 100) {
+      await send(session, '杠杆倍数不合法');
+      return;
+    }
+    // check at flag
+    if (at && at !== 'at') {
+      await send(session, '命令格式错误');
+      return;
+    }
+    if (at === 'at') {
+      const parsedPrice = parseFloat(price, 10);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        await send(session, '限价价格不合法');
+        return;
+      }
+      return await placeFutureOrder(session, { type: 'long', ratio: parsedRatio, amount: parsedAmount, coin, price: parsedPrice });
+    } else {
+      return await dealFuture(session, { type: 'long', ratio: parsedRatio, amount: parsedAmount, coin});
+    }
+  });
+  ctx.command('short <amount> <coin> <ratio> [at] [price]', '').action(async (_, amount, coin, ratio, at, price) => {
+    const { session } = _;
+    if (!checkUser(session) || !checkFutures(session)) {
+      return;
+    }
+    // check coin
+    const lowerCaseCoin = coin.toLowerCase();
+    if (lowerCaseCoin.includes('/') && !lowerCaseCoin.endsWith('usdt')) {
+      await send(session, '模拟交易仅支持 币/USDT 交易对');
+      return;
+    }
+    // parse number
+    const parsedAmount = parseFloat(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await send(session, '数量不合法');
+      return;
+    }
+    const parsedRatio = parseInt(ratio, 10);
+    if (isNaN(parsedRatio) || parsedRatio < 1 || parsedRatio > 100) {
+      await send(session, '杠杆倍数不合法');
+      return;
+    }
+    // check at flag
+    if (at && at !== 'at') {
+      await send(session, '命令格式错误');
+      return;
+    }
+    if (at === 'at') {
+      const parsedPrice = parseFloat(price, 10);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        await send(session, '限价价格不合法');
+        return;
+      }
+      return await placeFutureOrder(session, { type: 'short', ratio: parsedRatio, amount: parsedAmount, coin, price: parsedPrice });
+    } else {
+      return await dealFuture(session, { type: 'short', ratio: parsedRatio, amount: parsedAmount, coin });
+    }
+  });
+  ctx.command('close <opType> <amount> <coin> [at] [price]', '').action(async (_, opType, amount, coin, at, price) => {
+    const { session } = _;
+    if (!checkUser(session) || !checkFutures(session)) {
+      return;
+    }
+    // check at flag
+    if (at && at !== 'at') {
+      await send(session, '命令格式错误');
+      return;
+    }
+    // check op type
+    if (opType !== 'long' && opType !== 'short') {
+      await send(session, '操作类型只支持long/short');
+      return;
+    }
+    // parse number
+    const parsedAmount = parseFloat(amount, 10);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      await send(session, '数量不合法');
+      return;
+    }
+    if (at === 'at') {
+      const parsedPrice = parseFloat(price, 10);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        await send(session, '限价价格不合法');
+        return;
+      }
+      return await placeFutureOrder(session, { type: 'close', amount: parsedAmount, coin, price, opType });
+    } else {
+      return await dealFuture(session, { type: 'close', amount: parsedAmount, coin, opType });
+    }
+  });
+  ctx.command('cancel-order <orderId>', '撤销现货模拟交易中的订单').action(async (_, orderId) => {
     const { session } = _;
     if (!checkUser(session)) {
       return;
