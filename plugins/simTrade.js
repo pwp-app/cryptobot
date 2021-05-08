@@ -48,7 +48,7 @@ const initUser = async (userId, groupId) => {
 const checkUser = async (session) => {
   const { userId } = session;
   if (!userData[userId]) {
-    await send(session, '请先使用"init-simtrade"指令初始化模拟交易');
+    await send(session, '请先使用"init-trade"指令初始化模拟交易');
     return false;
   }
   return true;
