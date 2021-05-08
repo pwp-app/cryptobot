@@ -17,6 +17,9 @@ const getSymbol = (coin) => {
 };
 
 const checkCoin = async (coin) => {
+  if (availableCoins[coin]) {
+    return true;
+  }
   const { coinName, symbol } = getSymbol(coin);
   try {
     let coinPrice;
@@ -32,6 +35,7 @@ const checkCoin = async (coin) => {
     console.error('Failed to check coin.', err);
     return false;
   }
+  availableCoins[coin] = true;
   return true;
 };
 
