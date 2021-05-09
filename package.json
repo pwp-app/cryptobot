@@ -1,6 +1,6 @@
 {
   "name": "cryptobot",
-  "version": "0.3.3",
+  "version": "0.4.1",
   "description": "View crypto currency price in QQ group",
   "main": "main.js",
   "author": "BackRunner",
@@ -16,11 +16,13 @@
   },
   "dependencies": {
     "@backrunner/levelatomic": "^0.1.0",
-    "ccxt": "^1.49.53",
+    "ccxt": "^1.49.62",
     "koishi-adapter-onebot": "^3.0.8",
     "levelatomic": "file:../levelatomic",
     "leveldown": "^6.0.0",
     "levelup": "^5.0.0",
-    "nanoid": "^3.1.22"
+    "nanoid": "^3.1.22",
+    "pngjs": "^6.0.0",
+    "puppeteer": "^9.1.1"
   }
 }

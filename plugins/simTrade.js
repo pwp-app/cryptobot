@@ -1,4 +1,4 @@
-const { ONE_WEEK } = require('../constants/time');
+﻿const { ONE_WEEK } = require('../constants/time');
 const { send, formatNumber, fixedNumber } = require('../utils/message');
 const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
