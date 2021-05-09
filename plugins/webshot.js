@@ -51,15 +51,17 @@ module.exports = async (ctx) => {
         if (options.period === '15m') {
           await page.mouse.click(398, 202);
         } else if (options.period === '1h') {
-          await page.mouse.click(452, 202);
+          await page.mouse.click(448, 202);
         } else if (options.period === '4h') {
           await page.mouse.click(497, 202);
         }
+      } else {
+        await page.mouse.click(536, 202);
       }
       const loadTimeout = setTimeout(async () => {
         await page.close();
         await send(session, 'K线图加载失败');
-      }, 10 * 1000);
+      }, 15 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
