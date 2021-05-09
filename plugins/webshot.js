@@ -50,12 +50,17 @@ module.exports = async (ctx) => {
       const loadTimeout = setTimeout(async () => {
         await page.close();
         await send(session, 'K线图加载失败');
-      }, 15 * 1000);
+      }, 30 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
           return;
         }
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, 500);
+        });
         clearTimeout(loadTimeout);
         const imgBuffer = await page.screenshot({
           clip: {
