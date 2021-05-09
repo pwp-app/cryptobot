@@ -26,6 +26,7 @@ module.exports = async (ctx) => {
     .command('chart <coin>', '查看某种币的K线')
     .option('period', '-p <period>')
     .action(async (_, coin) => {
+      const { session } = _;
       // check coin
       if (!(await checkCoin(coin))) {
         await send(session, '请检查输入的币名');
@@ -60,16 +61,13 @@ module.exports = async (ctx) => {
         await send(session, 'K线图加载失败');
       }, 10 * 1000);
       page.on('response', async (response) => {
+        console.log(options.period);
         const url = response.request().url();
-        if (!url.includes('klines')) {
+        if (!url.includes('klines') || !url.includes(options.period || '1d')) {
           return;
         }
+        await response.json();
         clearTimeout(loadTimeout);
-        await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve();
-          }, 500);
-        })
         const imgBuffer = await page.screenshot({
           clip: {
             x: 328,
@@ -79,7 +77,7 @@ module.exports = async (ctx) => {
           },
         });
         await page.close();
-        await _.session.send(segment.image(imgBuffer));
+        await session.send(segment.image(imgBuffer));
       });
     });
 };
