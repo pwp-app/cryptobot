@@ -46,36 +46,24 @@ module.exports = async (ctx) => {
       }
       await page.mouse.click(1, 1);
       const { options } = _;
-      if (options.period) {
-        if (options.period === '15m') {
-          await page.click('[id="15m"]');
-        } else if (options.period === '1h') {
-          await page.click('[id="1h"]');
-        } else if (options.period === '4h') {
-          await page.click('[id="4h"]');
-        } else {
-          await page.click('[id="1d"]');
-        }
-      } else {
-        await page.click('[id="1d"]');
-      }
+      await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
         await page.close();
         await send(session, 'K线图加载失败');
       }, 15 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
-        // if (!url.includes('depth')) {
-        //   return;
-        // }
+        if (!url.includes('klines') || !url.includes(options.period || '1d')) {
+          return;
+        }
         clearTimeout(loadTimeout);
         const imgBuffer = await page.screenshot({
-          // clip: {
-          //   x: 0,
-          //   y: 162,
-          //   width: 679,
-          //   height: 392,
-          // },
+          clip: {
+            x: 0,
+            y: 162,
+            width: 679,
+            height: 392,
+          },
         });
         await page.close();
         await session.send(segment.image(imgBuffer));
