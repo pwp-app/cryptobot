@@ -1,4 +1,4 @@
-const { ONE_WEEK } = require('../constants/time');
+﻿const { ONE_WEEK } = require('../constants/time');
 const { send, formatNumber, fixedNumber } = require('../utils/message');
 const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
@@ -38,7 +38,6 @@ const initUser = async (userId, groupId) => {
   userData[userId] = {
     money: INIT_MONEY,
     availableMoney: INIT_MONEY,
-    profit: 0,
     orders: {},
     positions: {},
     createTime: Date.now(),
