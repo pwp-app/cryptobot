@@ -6,7 +6,7 @@ const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
 
 const tempDirPath = path.resolve(__dirname, '../temp');
-const DOMAIN = 'www.binance.cc';
+const DOMAIN = 'www.binance.com';
 
 if (!fs.existsSync(tempDirPath)) {
   fs.mkdirSync(tempDirPath, { recursive: true });
@@ -35,8 +35,8 @@ module.exports = async (ctx) => {
       // take shot
       const page = await browser.newPage();
       page.setViewport({
-        width: 1280,
-        height: 800,
+        width: 1020,
+        height: 768,
       });
       if (!coin.includes('/')) {
         await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`);
@@ -44,19 +44,20 @@ module.exports = async (ctx) => {
         const tradePair = coin.replace('/', '_').toUpperCase();
         await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`);
       }
-      await page.mouse.click(962, 184);
-      await page.mouse.click(932, 130);
+      await page.mouse.click(10, 10);
       const { options } = _;
       if (options.period) {
         if (options.period === '15m') {
-          await page.mouse.click(398, 202);
+          await page.click('[id="15m"]');
         } else if (options.period === '1h') {
-          await page.mouse.click(448, 202);
+          await page.click('[id="1h"]');
         } else if (options.period === '4h') {
-          await page.mouse.click(497, 202);
+          await page.click('[id="4h"]');
+        } else {
+          await page.click('[id="1d"]');
         }
       } else {
-        await page.mouse.click(536, 202);
+        await page.click('[id="1d"]');
       }
       const loadTimeout = setTimeout(async () => {
         await page.close();
@@ -64,17 +65,16 @@ module.exports = async (ctx) => {
       }, 15 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
-        if (!url.includes('klines') || !url.includes(options.period || '1d')) {
+        if (!url.includes('depth')) {
           return;
         }
-        await response.json();
         clearTimeout(loadTimeout);
         const imgBuffer = await page.screenshot({
           clip: {
-            x: 328,
-            y: 182,
-            width: 622,
-            height: 484,
+            x: 0,
+            y: 162,
+            width: 679,
+            height: 392,
           },
         });
         await page.close();
