@@ -598,13 +598,14 @@ module.exports = async (ctx) => {
       await send(session, '错误: 无法获取持仓价值');
       return;
     }
+    const userValue = user.money + positionsValue;
     await send(
       session,
-      `您的账户信息:\n总价值: ${(user.money + positionsValue).toFixed(2)} USDT\n总资金: ${user.money.toFixed(
+      `您的账户信息:\n总价值: ${userValue.toFixed(2)} USDT\n总资金: ${user.money.toFixed(
         2
-      )} USDT\n可用资金: ${user.availableMoney.toFixed(2)} USDT\n收益率: ${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(
+      )} USDT\n可用资金: ${user.availableMoney.toFixed(2)} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(
         5
-      )}%`
+      )}%)`
     );
   });
   ctx.command('my-positions', '查询模拟交易持仓').action(async (_) => {
@@ -638,9 +639,9 @@ module.exports = async (ctx) => {
       if (!position) {
         return;
       }
-      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(position.amount)} / ${formatNumber(
-        position.availableAmount
-      )}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现收益: ${
+      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(
+        position.amount
+      )} / ${formatNumber(position.availableAmount)}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
@@ -658,12 +659,10 @@ module.exports = async (ctx) => {
       await send(session, '您没有设置任何订单');
       return;
     }
-    let message = '您的订单:';
+    let message = '您的订单:'
     orderIds.forEach((id, index) => {
       const order = orders[id];
-      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(
-        order.amount
-      )} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
+      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(order.amount)} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
     });
     await send(session, message);
   });
