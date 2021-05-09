@@ -39,21 +39,28 @@ module.exports = async (ctx) => {
         width: 1020,
         height: 768,
       });
-      if (!coin.includes('/')) {
-        await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`, {
-          waitUntil: 'networkidle2',
-        });;
-      } else {
-        const tradePair = coin.replace('/', '_').toUpperCase();
-        await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`, {
-          waitUntil: 'networkidle2',
-        });
+      try {
+        if (!coin.includes('/')) {
+          await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`, {
+            waitUntil: 'networkidle2',
+          });
+        } else {
+          const tradePair = coin.replace('/', '_').toUpperCase();
+          await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`, {
+            waitUntil: 'networkidle2',
+          });
+        }
+      } catch (err) {
+        console.error('Failed to navigate.');
+        await send(session, `获取[${coin.toUpperCase()}]K线图数据失败 (等待超时)`);
+        await page.close();
+        return;
       }
       await page.mouse.click(1, 1);
       const { options } = _;
       await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
-        await send(session, `获取[${coin.toUpperCase()}]K线图数据失败`);
+        await send(session, `获取[${coin.toUpperCase()}]K线图数据失败 (加载超时)`);
       }, 30 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
