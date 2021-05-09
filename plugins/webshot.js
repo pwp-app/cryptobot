@@ -57,12 +57,12 @@ module.exports = async (ctx) => {
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
           return;
         }
+        clearTimeout(loadTimeout);
         await new Promise((resolve) => {
           setTimeout(() => {
             resolve();
-          }, 500);
+          }, 3000);
         });
-        clearTimeout(loadTimeout);
         const imgBuffer = await page.screenshot({
           clip: {
             x: 0,
