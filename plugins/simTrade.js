@@ -401,13 +401,14 @@ module.exports = async (ctx) => {
       await send(session, '错误: 无法获取持仓价值');
       return;
     }
+    const userValue = user.money + positionsValue;
     await send(
       session,
-      `您的账户信息:\n总价值: ${(user.money + positionsValue).toFixed(2)} USDT\n总资金: ${user.money.toFixed(
+      `您的账户信息:\n总价值: ${userValue.toFixed(2)} USDT\n总资金: ${user.money.toFixed(
         2
-      )} USDT\n可用资金: ${user.availableMoney.toFixed(2)} USDT\n收益率: ${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(
+      )} USDT\n可用资金: ${user.availableMoney.toFixed(2)} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(
         5
-      )}%`
+      )}%)`
     );
   });
   ctx.command('my-positions', '查询模拟交易持仓').action(async (_) => {
