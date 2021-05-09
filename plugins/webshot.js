@@ -48,13 +48,17 @@ module.exports = async (ctx) => {
       const { options } = _;
       await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
-        const imgBuffer = await page.screenshot();
-        await page.close();
-        await session.send(segment.image(imgBuffer));
+        await send(session, '获取K线图数据失败');
       }, 15 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
+          return;
+        }
+        try {
+          await response.json();
+        } catch {
+          await send(session, '获取K线图数据失败');
           return;
         }
         clearTimeout(loadTimeout);
