@@ -65,24 +65,22 @@ module.exports = async (ctx) => {
           });
         };
         const takeShot = async () => {
-          const imgBuffer = await page.screenshot({
-            clip: {
-              x: 0,
-              y: 162,
-              width: 679,
-              height: 392,
-            },
-          });
-          const rx = 325;
-          const ry = 194;
+          const chart = await page.$('.kline-container');
+          if (!chart) {
+            return await delayExec(takeShot);
+          }
+          const imgBuffer = await chart.screenshot();
+          const rx = 323;
+          const ry = 155;
           const res = await new Promise((resolve) => {
-            new PNG({ filterType: 4 }).parse(imgBuffer, function (err, data) {
+            new PNG({ filterType: 4 }).parse(imgBuffer, function (err, img) {
               if (err) {
                 return resolve(false);
               }
               const idx = (679 * ry + rx) << 2;
-              const pixel = [data[idx], data[idx + 1], data[idx + 2]];
-              if (pixel[0] === 240 && pixel[1] === 185 && pixel[2] === 11) {
+              const { data } = img;
+              const pixels = [data[idx], data[idx + 1], data[idx + 2]];
+              if (pixels[0] === 240 && pixels[1] === 185 && pixels[2] === 11) {
                 return resolve(false);
               }
               resolve(true);
@@ -96,7 +94,7 @@ module.exports = async (ctx) => {
             await delayExec(takeShot);
           }
         };
+        takeShot();
       });
-      takeShot();
     });
 };
