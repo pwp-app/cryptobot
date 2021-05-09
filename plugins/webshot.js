@@ -61,51 +61,49 @@ module.exports = async (ctx) => {
       await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
         await send(session, `获取[${coin.toUpperCase()}]K线图数据失败 (加载超时)`);
-      }, 30 * 1000);
-      page.on('response', async (response) => {
-        const url = response.request().url();
-        if (!url.includes('klines') || !url.includes(options.period || '1d')) {
-          return;
+      }, 15 * 1000);
+      const delayExec = async (fn) => {
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            fn();
+            resolve();
+          }, 1000);
+        });
+      };
+      const takeShot = async () => {
+        const chart = await page.$('.kline-container');
+        if (!chart) {
+          return await delayExec(takeShot);
         }
-        const delayExec = async (fn) => {
-          await new Promise((resolve) => {
-            setTimeout(() => {
-              fn();
-              resolve();
-            }, 1000);
+        const imgBuffer = await chart.screenshot();
+        console.log(0);
+        const rx = 323;
+        const ry = 155;
+        const res = await new Promise((resolve) => {
+          new PNG({ filterType: 4 }).parse(imgBuffer, function (err, img) {
+            if (err) {
+              return resolve(false);
+            }
+            const idx = (img.width * ry + rx) << 2;
+            const { data } = img;
+            const pixels = [data[idx], data[idx + 1], data[idx + 2]];
+            console.log(pixels);
+            if (pixels[0] === 240 && pixels[1] === 185 && pixels[2] === 11) {
+              return resolve(false);
+            }
+            resolve(true);
           });
-        };
-        const takeShot = async () => {
-          const chart = await page.$('.kline-container');
-          if (!chart) {
-            return await delayExec(takeShot);
-          }
-          const imgBuffer = await chart.screenshot();
-          const rx = 323;
-          const ry = 155;
-          const res = await new Promise((resolve) => {
-            new PNG({ filterType: 4 }).parse(imgBuffer, function (err, img) {
-              if (err) {
-                return resolve(false);
-              }
-              const idx = (679 * ry + rx) << 2;
-              const { data } = img;
-              const pixels = [data[idx], data[idx + 1], data[idx + 2]];
-              if (pixels[0] === 240 && pixels[1] === 185 && pixels[2] === 11) {
-                return resolve(false);
-              }
-              resolve(true);
-            });
-          });
-          if (res) {
-            await page.close();
-            clearTimeout(loadTimeout);
-            await session.send(segment.image(imgBuffer));
-          } else {
-            await delayExec(takeShot);
-          }
-        };
-        takeShot();
-      });
+        });
+        if (res) {
+          console.log(1);
+          await page.close();
+          clearTimeout(loadTimeout);
+          await session.send(segment.image(imgBuffer));
+        } else {
+          console.log(2);
+          return await delayExec(takeShot);
+        }
+      };
+      await takeShot();
     });
 };
