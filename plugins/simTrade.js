@@ -23,10 +23,11 @@ const initUserData = async function () {
   // init order monitors
   Object.keys(userData).forEach((userId) => {
     const user = userData[userId];
-    user.orders && Object.keys(user.orders).forEach((orderId) => {
-      const order = user.orders[orderId];
-      addOrderMonitor.call(this, order);
-    });
+    user.orders &&
+      Object.keys(user.orders).forEach((orderId) => {
+        const order = user.orders[orderId];
+        addOrderMonitor.call(this, order);
+      });
   });
 };
 
@@ -44,7 +45,7 @@ const initUser = async (userId, groupId) => {
     groupId,
   };
   await saveUserData();
-}
+};
 
 const checkUser = async (session) => {
   const { userId } = session;
@@ -92,11 +93,8 @@ const getPositionsValue = async (userId) => {
 
 const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amount, channelId }) {
   const sendMessage = async (message) => {
-    await this.sendMessage(
-      channelId,
-      `${channelId.includes('private') ? '' : segment.at(userId)}${message}`
-    );
-  }
+    await this.sendMessage(channelId, `${channelId.includes('private') ? '' : segment.at(userId)}${message}`);
+  };
   const handler = async ({ price: lastPrice }) => {
     // deal
     if (type === 'buy' && lastPrice <= price) {
@@ -403,11 +401,9 @@ module.exports = async (ctx) => {
     const userValue = user.money + positionsValue;
     await send(
       session,
-      `您的账户信息:\n总价值: ${userValue.toFixed(2)} USDT\n总资金: ${user.money.toFixed(
+      `您的账户信息:\n总价值: ${userValue.toFixed(2)} USDT\n总资金: ${user.money.toFixed(2)} USDT\n可用资金: ${user.availableMoney.toFixed(
         2
-      )} USDT\n可用资金: ${user.availableMoney.toFixed(2)} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(
-        5
-      )}%)`
+      )} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(5)}%)`
     );
   });
   ctx.command('my-positions', '查询模拟交易持仓').action(async (_) => {
@@ -424,26 +420,32 @@ module.exports = async (ctx) => {
     }
     // fetch latest price data
     const price = {};
-    await Promise.all(
-      symbols.map((symbol) => {
-        return new Promise(async (resolve) => {
-          const res = await getLatestPriceBySymbol(symbol);
-          if (res) {
-            price[symbol] = res;
-          }
-          resolve();
-        });
-      })
-    );
+    try {
+      await Promise.all(
+        symbols.map((symbol) => {
+          return new Promise(async (resolve) => {
+            const res = await getLatestPriceBySymbol(symbol);
+            if (res) {
+              price[symbol] = res;
+            }
+            resolve();
+          });
+        })
+      );
+    } catch (err) {
+      console.error('Failed to get price of positions.', err);
+      await send(session, '获取持仓信息失败');
+      return;
+    }
     let message = '您的持仓:';
     symbols.forEach((symbol, index) => {
       const position = positions[symbol];
       if (!position) {
         return;
       }
-      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(
-        position.amount
-      )} / ${formatNumber(position.availableAmount)}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
+      message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(position.amount)} / ${formatNumber(
+        position.availableAmount
+      )}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
@@ -461,10 +463,12 @@ module.exports = async (ctx) => {
       await send(session, '您没有设置任何订单');
       return;
     }
-    let message = '您的订单:'
+    let message = '您的订单:';
     orderIds.forEach((id, index) => {
       const order = orders[id];
-      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(order.amount)} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
+      message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(
+        order.amount
+      )} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
     });
     await send(session, message);
   });
