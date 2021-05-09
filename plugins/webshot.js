@@ -6,6 +6,7 @@ const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
 
 const tempDirPath = path.resolve(__dirname, '../temp');
+const DOMAIN = process.env.NODE_ENV === 'dev' ? 'www.binance.cc' : 'www.binance.com';
 
 if (!fs.existsSync(tempDirPath)) {
   fs.mkdirSync(tempDirPath, { recursive: true });
@@ -36,7 +37,12 @@ module.exports = async (ctx) => {
         width: 1280,
         height: 800,
       });
-      await page.goto(`https://www.binance.cc/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`);
+      if (!coin.includes('/')) {
+        await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`);
+      } else {
+        const tradePair = coin.replace('/', '_').toUpperCase();
+        await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`);
+      }
       await page.mouse.click(962, 184);
       await page.mouse.click(932, 130);
       const { options } = _;
@@ -49,20 +55,26 @@ module.exports = async (ctx) => {
           await page.mouse.click(497, 202);
         }
       }
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 5000);
+      const loadTimeout = setTimeout(async () => {
+        await page.close();
+        await send(session, 'K线图加载失败');
+      }, 10 * 1000);
+      page.on('response', async (response) => {
+        const url = response.request().url();
+        if (!url.includes('klines')) {
+          return;
+        }
+        clearTimeout(loadTimeout);
+        const imgBuffer = await page.screenshot({
+          clip: {
+            x: 328,
+            y: 182,
+            width: 622,
+            height: 484,
+          },
+        });
+        await page.close();
+        await _.session.send(segment.image(imgBuffer));
       });
-      const imgBuffer = await page.screenshot({
-        clip: {
-          x: 328,
-          y: 182,
-          width: 622,
-          height: 484,
-        },
-      });
-      await page.close();
-      await _.session.send(segment.image(imgBuffer));
     });
 };
