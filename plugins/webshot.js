@@ -51,7 +51,7 @@ module.exports = async (ctx) => {
           });
         }
       } catch (err) {
-        console.error('Failed to navigate.');
+        console.error('Failed to navigate.', err);
         await send(session, `获取[${coin.toUpperCase()}]K线图数据失败 (等待超时)`);
         await page.close();
         return;
