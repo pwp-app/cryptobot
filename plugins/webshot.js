@@ -6,7 +6,7 @@ const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
 
 const tempDirPath = path.resolve(__dirname, '../temp');
-const DOMAIN = process.env.NODE_ENV === 'dev' ? 'www.binance.cc' : 'www.binance.com';
+const DOMAIN = 'www.binance.cc';
 
 if (!fs.existsSync(tempDirPath)) {
   fs.mkdirSync(tempDirPath, { recursive: true });
@@ -49,7 +49,7 @@ module.exports = async (ctx) => {
       const { options } = _;
       if (options.period) {
         if (options.period === '15m') {
-          await page.mouse.click(402, 202);
+          await page.mouse.click(398, 202);
         } else if (options.period === '1h') {
           await page.mouse.click(452, 202);
         } else if (options.period === '4h') {
@@ -61,7 +61,6 @@ module.exports = async (ctx) => {
         await send(session, 'K线图加载失败');
       }, 10 * 1000);
       page.on('response', async (response) => {
-        console.log(options.period);
         const url = response.request().url();
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
           return;
