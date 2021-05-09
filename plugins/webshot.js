@@ -30,7 +30,7 @@ module.exports = async (ctx) => {
       const { session } = _;
       // check coin
       if (!(await checkCoin(coin))) {
-        await send(session, '请检查输入的币名');
+        await send(session, '有效性检查失败，无法获取数据');
         return;
       }
       // take shot

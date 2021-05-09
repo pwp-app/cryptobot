@@ -7,7 +7,7 @@ const {
   fetchDepth,
 } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
-const { buildPriceMessage, formatNumber } = require('../utils/message');
+const { buildPriceMessage, formatNumber, send } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
@@ -33,6 +33,7 @@ module.exports = (ctx) => {
         }
       } catch (err) {
         console.error('Failed to fetch price.', err);
+        await send(session, '出现错误，无法获取数据');
         return next();
       }
       if (price) {
@@ -43,7 +44,9 @@ module.exports = (ctx) => {
       try {
         price = await fetchFuturesPrice(symbol.toUpperCase());
       } catch (err) {
+        await send(session, '出现错误，无法获取数据');
         console.error('Failed to fetch price.', err);
+        return next();
       }
       if (price) {
         return await session.send(buildPriceMessage({ name: coin, type: 'futures' }, price));
@@ -76,7 +79,9 @@ module.exports = (ctx) => {
       try {
         await Promise.all(promises);
       } catch (err) {
+        await send(session, '出现错误，数据获取失败');
         console.error('Failed to fetch long short data.', err);
+        return next();
       }
       if (lsPosition.length !== period.length || lsAccount.length !== period.length || lsGA.length !== period.length) {
         await session.send('数据获取失败');
@@ -103,7 +108,14 @@ module.exports = (ctx) => {
     } else if (formattedContent.endsWith('*')) {
       // query depth
       if (!HUOBI_LIST.includes(coinName)) {
-        const depth = await fetchDepth(symbol.toUpperCase());
+        let depth;
+        try {
+          depth = await fetchDepth(symbol.toUpperCase());
+        } catch (err) {
+          console.error('Failed to fetch depth.', err);
+          await send(session, '数据获取失败');
+          return next();
+        }
         let { bids, asks } = depth;
         let message = `${coinName.toUpperCase()} 现货交易深度`;
         asks = asks.reverse();
