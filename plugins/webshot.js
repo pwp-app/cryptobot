@@ -76,7 +76,6 @@ module.exports = async (ctx) => {
           return await delayExec(takeShot);
         }
         const imgBuffer = await chart.screenshot();
-        console.log(0);
         const rx = 323;
         const ry = 155;
         const res = await new Promise((resolve) => {
@@ -87,7 +86,6 @@ module.exports = async (ctx) => {
             const idx = (img.width * ry + rx) << 2;
             const { data } = img;
             const pixels = [data[idx], data[idx + 1], data[idx + 2]];
-            console.log(pixels);
             if (pixels[0] === 240 && pixels[1] === 185 && pixels[2] === 11) {
               return resolve(false);
             }
@@ -95,7 +93,6 @@ module.exports = async (ctx) => {
           });
         });
         if (res) {
-          console.log(1);
           await page.close();
           clearTimeout(loadTimeout);
           await session.send(segment.image(imgBuffer));
