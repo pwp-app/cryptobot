@@ -44,7 +44,7 @@ module.exports = async (ctx) => {
         const tradePair = coin.replace('/', '_').toUpperCase();
         await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`);
       }
-      await page.mouse.click(10, 10);
+      await page.mouse.click(1, 1);
       const { options } = _;
       if (options.period) {
         if (options.period === '15m') {
@@ -65,17 +65,17 @@ module.exports = async (ctx) => {
       }, 15 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
-        if (!url.includes('depth')) {
-          return;
-        }
+        // if (!url.includes('depth')) {
+        //   return;
+        // }
         clearTimeout(loadTimeout);
         const imgBuffer = await page.screenshot({
-          clip: {
-            x: 0,
-            y: 162,
-            width: 679,
-            height: 392,
-          },
+          // clip: {
+          //   x: 0,
+          //   y: 162,
+          //   width: 679,
+          //   height: 392,
+          // },
         });
         await page.close();
         await session.send(segment.image(imgBuffer));
