@@ -25,7 +25,7 @@ const formatNumber = (numStr) => {
 
 const fixedNumber = (numStr, count = 6) => {
   if (!numStr.includes('.')) {
-    return;
+    return numStr;
   }
   const parts = numStr.split('.');
   if (parts[1].length > count) {
