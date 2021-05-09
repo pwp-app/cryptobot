@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
+const PNG = require('pngjs').PNG;
 const { checkCoin } = require('../utils/coin');
 const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
@@ -49,34 +50,53 @@ module.exports = async (ctx) => {
       await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
         await send(session, '获取K线图数据失败');
-      }, 15 * 1000);
+      }, 30 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
         if (!url.includes('klines') || !url.includes(options.period || '1d')) {
           return;
         }
-        try {
-          await response.json();
-        } catch {
-          await send(session, '获取K线图数据失败');
-          return;
-        }
-        clearTimeout(loadTimeout);
-        await new Promise((resolve) => {
-          setTimeout(() => {
-            resolve();
-          }, 3000);
-        });
-        const imgBuffer = await page.screenshot({
-          clip: {
-            x: 0,
-            y: 162,
-            width: 679,
-            height: 392,
-          },
-        });
-        await page.close();
-        await session.send(segment.image(imgBuffer));
+        const delayExec = async (fn) => {
+          await new Promise((resolve) => {
+            setTimeout(() => {
+              fn();
+              resolve();
+            }, 1000);
+          });
+        };
+        const takeShot = async () => {
+          const imgBuffer = await page.screenshot({
+            clip: {
+              x: 0,
+              y: 162,
+              width: 679,
+              height: 392,
+            },
+          });
+          const rx = 325;
+          const ry = 194;
+          const res = await new Promise((resolve) => {
+            new PNG({ filterType: 4 }).parse(imgBuffer, function (err, data) {
+              if (err) {
+                return resolve(false);
+              }
+              const idx = (679 * ry + rx) << 2;
+              const pixel = [data[idx], data[idx + 1], data[idx + 2]];
+              if (pixel[0] === 240 && pixel[1] === 185 && pixel[2] === 11) {
+                return resolve(false);
+              }
+              resolve(true);
+            });
+          });
+          if (res) {
+            await page.close();
+            clearTimeout(loadTimeout);
+            await session.send(segment.image(imgBuffer));
+          } else {
+            await delayExec(takeShot);
+          }
+        };
       });
+      takeShot();
     });
 };
