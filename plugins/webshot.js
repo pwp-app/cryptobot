@@ -65,6 +65,11 @@ module.exports = async (ctx) => {
           return;
         }
         clearTimeout(loadTimeout);
+        await new Promise((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, 500);
+        })
         const imgBuffer = await page.screenshot({
           clip: {
             x: 328,
