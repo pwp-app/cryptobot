@@ -40,10 +40,14 @@ module.exports = async (ctx) => {
         height: 768,
       });
       if (!coin.includes('/')) {
-        await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`);
+        await page.goto(`https://${DOMAIN}/zh-CN/trade/${coin.toUpperCase()}_USDT?type=spot`, {
+          waitUntil: 'networkidle2',
+        });;
       } else {
         const tradePair = coin.replace('/', '_').toUpperCase();
-        await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`);
+        await page.goto(`https://${DOMAIN}/zh-CN/trade/${tradePair}?type=spot`, {
+          waitUntil: 'networkidle2',
+        });
       }
       await page.mouse.click(1, 1);
       const { options } = _;
