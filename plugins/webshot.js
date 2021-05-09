@@ -49,7 +49,7 @@ module.exports = async (ctx) => {
       const { options } = _;
       await page.click(`[id="${options.period || '1d'}"]`);
       const loadTimeout = setTimeout(async () => {
-        await send(session, '获取K线图数据失败');
+        await send(session, `获取[${coin.toUpperCase()}]K线图数据失败`);
       }, 30 * 1000);
       page.on('response', async (response) => {
         const url = response.request().url();
