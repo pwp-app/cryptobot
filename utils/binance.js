@@ -6,13 +6,6 @@ const binanceOpts = {
   apiKey,
   secret,
   countries: ['CN'],
-  enableRateLimit: false,
-  tokenBucket: {
-    delay:       3,
-    capacity:    1200,
-    defaultCost: 1,
-    maxCapacity: 10000,
-  },
 };
 
 let binance;

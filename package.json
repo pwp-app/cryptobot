@@ -7,8 +7,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=dev yarn koishi start",
-    "start": "cross-env NODE_ENV=prod yarn koishi start",
-    "test:latestAll": "cross-env NODE_ENV=dev node ./tests/allSpotLatest.js"
+    "start": "cross-env NODE_ENV=prod yarn koishi start"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
