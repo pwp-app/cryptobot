@@ -3,6 +3,7 @@ const HUOBI_LIST = [
   'hpt',
   'husd',
   'btm',
+  'wbtc',
 ];
 
 module.exports = HUOBI_LIST;
