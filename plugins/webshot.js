@@ -95,9 +95,8 @@ module.exports = async (ctx) => {
         if (res) {
           await page.close();
           clearTimeout(loadTimeout);
-          await session.send(segment.image(imgBuffer));
+          await session.send(`${coin.toUpperCase()} ${options.period.toUpperCase() || '1D'} K线图\n` + segment.image(imgBuffer));
         } else {
-          console.log(2);
           return await delayExec(takeShot);
         }
       };
