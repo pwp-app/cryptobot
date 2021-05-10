@@ -11,6 +11,7 @@ class LatestPrice {
     this.fetchFn = fetchFn;
     this.prices = {};
     this.tick = tick;
+    this.retryCounter = 0;
     this.interval = setInterval(async () => {
       const prices = await fetchFn();
       if (prices && Array.isArray(prices)) {
@@ -20,6 +21,14 @@ class LatestPrice {
             continue;
           }
           this.prices[prices[i].symbol.toLowerCase()] = parsedPrice;
+        }
+        if (this.retryCounter) {
+          this.retryCounter = 0;
+        }
+      } else {
+        this.retryCounter += 1;
+        if (this.retryCounter > 3) {
+          this.prices = {};
         }
       }
     }, this.tick);
