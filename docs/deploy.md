@@ -4,7 +4,7 @@
 
 ## 1. 启动一个支持 OneBot 的主机
 
-我们推荐使用`[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)`，其他机器人主机未经测试，可能会出现未知问题。
+我们推荐使用[go-cqhttp](https://github.com/Mrs4s/go-cqhttp)，其他机器人主机未经测试，可能会出现未知问题。
 
 `go-cqhttp`的配置请参考该项目的文档，我们推荐使用`正向WebSocket`而非`HTTP`，为了保证服务的安全，我们建议配置`访问密钥`。
 
