@@ -1,8 +1,12 @@
-const { fetchSpotLatest, fetchSpotPrice } = require('../utils/binance');
+const { fetchSpotLatest, fetchAllSpotLatest, fetchSpotPrice } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
 const HUOBI_LIST = require('../constants/huobiList');
+const LatestPrices = require('./latestPrice');
 
 const availableCoins = {};
+const binanceLatestPrices = new LatestPrices({
+  fetchFn: fetchAllSpotLatest,
+});
 
 const getSymbol = (coin) => {
   let coinName = coin.toLowerCase();
@@ -16,6 +20,14 @@ const getSymbol = (coin) => {
   return { coinName, symbol };
 };
 
+const getCoinNameByUSDTSymbol = (symbol) => {
+  if (symbol.includes('/')) {
+    return symbol.split('/')[0].toLowerCase();
+  } else {
+    symbol.toLowerCase().replace('usdt', '');
+  }
+};
+
 const checkCoin = async (coin) => {
   if (availableCoins[coin]) {
     return true;
@@ -26,6 +38,11 @@ const checkCoin = async (coin) => {
     if (HUOBI_LIST.includes(coinName)) {
       coinPrice = await hFetchSpotPrice(symbol);
     } else {
+      const fetched = binanceLatestPrices.get(symbol);
+      if (fetched) {
+        availableCoins[coin] = true;
+        return true;
+      }
       coinPrice = await fetchSpotLatest(symbol.toUpperCase());
     }
     if (!coinPrice) {
@@ -42,10 +59,18 @@ const checkCoin = async (coin) => {
 const getLatestPrice = async (coin) => {
   let price;
   const { symbol } = getSymbol(coin);
-  if (HUOBI_LIST.includes(symbol)) {
-    price = await hFetchSpotPrice(symbol);
-  } else {
-    price = await fetchSpotPrice(symbol.toUpperCase());
+  try {
+    if (HUOBI_LIST.includes(symbol)) {
+      price = await hFetchSpotPrice(symbol);
+    } else {
+      const fetched = binanceLatestPrices.get(symbol);
+      if (fetched) {
+        return fetched;
+      }
+      price = await fetchSpotPrice(symbol.toUpperCase());
+    }
+  } catch (err) {
+    console.error('Failed to get latest price.', coin, err);
   }
   if (!price) {
     return null;
@@ -55,10 +80,19 @@ const getLatestPrice = async (coin) => {
 
 const getLatestPriceBySymbol = async (symbol) => {
   let price;
-  if (HUOBI_LIST.includes(symbol)) {
-    price = await hFetchSpotPrice(symbol);
-  } else {
-    price = await fetchSpotPrice(symbol.toUpperCase());
+  const coinName = getCoinNameByUSDTSymbol(symbol);
+  try {
+    if (HUOBI_LIST.includes(coinName)) {
+      price = await hFetchSpotPrice(symbol);
+    } else {
+      const fetched = binanceLatestPrices.get(symbol);
+      if (fetched) {
+        return fetched;
+      }
+      price = await fetchSpotPrice(symbol.toUpperCase());
+    }
+  } catch (err) {
+    console.error('Failed to get latest price by symbol.', symbol, err);
   }
   if (!price) {
     return null;

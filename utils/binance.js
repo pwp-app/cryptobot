@@ -1,6 +1,11 @@
 const ccxt = require('ccxt');
 const HttpsProxyAgent = require('https-proxy-agent');
+const RateLimiter = require('../utils/rateLimiter');
 const { apiKey, secret } = require('../config.private');
+
+const limiter = new RateLimiter({
+  weightsPerMin: 1200,
+});
 
 const binanceOpts = {
   apiKey,
@@ -19,24 +24,40 @@ if (process.env.NODE_ENV === 'dev') {
   binance = new ccxt.binance(binanceOpts);
 }
 
+const request = limiter.throttle({
+  requestFn: binance.request,
+  thisArg: binance,
+});
+const requestWith2Cost = limiter.throttle({
+  requestFn: binance.request,
+  thisArg: binance,
+  cost: 2,
+});
+
 const fetchSpotPrice = async (symbol) => {
-  return await binance.request('ticker/24hr', 'public', 'get', { symbol });
+  return await request('ticker/24hr', 'public', 'get', { symbol });
 };
 
 const fetchFuturesPrice = async (symbol) => {
-  return await binance.request('ticker/24hr', 'fapiPublic', 'get', { symbol });
+  return await request('ticker/24hr', 'fapiPublic', 'get', { symbol });
 };
 
 const fetchSpotLatest = async (symbol) => {
-  return await binance.request('ticker/price', 'public', 'get', { symbol });
+  return await request('ticker/price', 'public', 'get', { symbol });
 };
 
 const fetchAllSpotLatest = async () => {
-  return await binance.request('ticker/price', 'public', 'get');
+  let prices = null;
+  try {
+    prices = await requestWith2Cost('ticker/price', 'public', 'get');
+  } catch (err) {
+    console.error('Failed to fetch all spot prices from binance.', err);
+  }
+  return prices;
 };
 
 const fetchFuturesLatest = async (symbol) => {
-  return await binance.request('ticker/price', 'fapiPublic', 'get', { symbol });
+  return await request('ticker/price', 'fapiPublic', 'get', { symbol });
 };
 
 const fetchLongShortPosition = async (symbol, period) => {

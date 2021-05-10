@@ -327,6 +327,7 @@ module.exports = async (ctx) => {
       await send(session, '数量不合法');
       return;
     }
+    // get latest price
     const latestPrice = await getLatestPrice(coin);
     if (!latestPrice) {
       await send(session, '价格获取失败');
@@ -393,9 +394,15 @@ module.exports = async (ctx) => {
     }
     const { userId } = session;
     const user = userData[userId];
-    const positionsValue = await getPositionsValue(userId);
+    let positionsValue;
+    try {
+      positionsValue = await getPositionsValue(userId);
+    } catch (err) {
+      console.error('Failed to get positions value.', err);
+      await send(session, '无法获取持仓价值');
+    }
     if (positionsValue < 0) {
-      await send(session, '错误: 无法获取持仓价值');
+      await send(session, '无法获取持仓价值');
       return;
     }
     const userValue = user.money + positionsValue;
