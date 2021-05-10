@@ -6,7 +6,13 @@ const binanceOpts = {
   apiKey,
   secret,
   countries: ['CN'],
-  enableRateLimit: true,
+  enableRateLimit: false,
+  tokenBucket: {
+    delay:       3,
+    capacity:    1200,
+    defaultCost: 1,
+    maxCapacity: 10000,
+  },
 };
 
 let binance;
@@ -30,6 +36,10 @@ const fetchFuturesPrice = async (symbol) => {
 
 const fetchSpotLatest = async (symbol) => {
   return await binance.request('ticker/price', 'public', 'get', { symbol });
+};
+
+const fetchAllSpotLatest = async () => {
+  return await binance.request('ticker/price', 'public', 'get');
 };
 
 const fetchFuturesLatest = async (symbol) => {
@@ -77,6 +87,7 @@ module.exports = {
   fetchSpotPrice,
   fetchFuturesPrice,
   fetchSpotLatest,
+  fetchAllSpotLatest,
   fetchFuturesLatest,
   fetchLongShortPosition,
   fetchTopLongShortAccount,

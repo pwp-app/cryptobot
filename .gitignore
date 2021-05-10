@@ -190,3 +190,4 @@ config.private.js
 koishi.config.js
 storage
 temp
+tests
