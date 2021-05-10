@@ -62,20 +62,21 @@ module.exports = async (ctx) => {
   await initTasks.call(ctx.bots[0]);
   // add command
   ctx.command('monitor <coin> <type> <price>', '监控某个币的现货价格并给出提醒 (type支持lt/gt)').action(async (_, coin, type, price) => {
+    const { session } = _;
     // check type
     if (type !== 'gt' && type !== 'lt') {
-      await send(_.session, 'Type 只能为 gt 或 lt');
+      await send(session, 'Type 只能为 gt 或 lt');
       return;
     }
     // check price
     const formattedPrice = parseFloat(price, 10);
     if (isNaN(price) || price <= 0) {
-      await send(_.session, 'Price 不合法');
+      await send(session, 'Price 不合法');
       return;
     }
     // check coin
     if (!await checkCoin(coin)) {
-      await send(_.session, '有效性检查失败，请重试');
+      await send(session, '有效性检查失败，请重试');
       return;
     };
     // create a monitor task
@@ -95,10 +96,11 @@ module.exports = async (ctx) => {
     tasks.push(opts);
     createMonitorTask.call(session.bot, opts);
     await db.supdate(storeKey, JSON.stringify(tasks));
-    await await send(_.session, '价格提醒已创建');
+    await await send(session, '价格提醒已创建');
   });
   ctx.command('my-monitors', '查询已创建的价格提醒').action(async (_) => {
-    const { userId } = _.session;
+    const { session } = _;
+    const { userId } = session;
     const myTasks = [];
     tasks.forEach((task) => {
       if (task.userId === userId) {
@@ -106,24 +108,25 @@ module.exports = async (ctx) => {
       }
     });
     if (!myTasks.length) {
-      await send(_.session, '您没有设置任何价格提醒');
+      await send(session, '您没有设置任何价格提醒');
       return;
     }
     let message = '';
-    if (_.session.subtype === 'group') {
-      message += segment.at(_.session.userId);
+    if (session.subtype === 'group') {
+      message += segment.at(session.userId);
     }
     message += '您的价格提醒: ';
     myTasks.forEach((task, index) => {
       const { coin, type, price, id } = task;
       message += `\n[${index + 1}] ${coin.toUpperCase()} ${type === 'gt' ? '高于' : '低于'} ${price} (${id})`;
     });
-    await _.session.send(message);
+    await session.send(message);
   });
   ctx.command('remove-monitor <id>', '根据ID移除价格提醒').action(async (_, id) => {
+    const { session } = _;
     const task = taskMap[id];
     if (!task) {
-      await send(_.session, '无法找到对应的价格提醒');
+      await send(session, '无法找到对应的价格提醒');
       return;
     }
     task.stop();
@@ -134,6 +137,6 @@ module.exports = async (ctx) => {
       }
     }
     await db.supdate(storeKey, JSON.stringify(tasks));
-    await send(_.session, `价格提醒 [${id}] 已移除`);
+    await send(session, `价格提醒 [${id}] 已移除`);
   });
 };
