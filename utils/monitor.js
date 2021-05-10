@@ -5,7 +5,7 @@ const { hFetchSpotPrice } = require('../utils/huobi');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
-const checkTick = 333;
+const checkTick = 500;
 
 const priceEvents = new EventEmitter();
 
