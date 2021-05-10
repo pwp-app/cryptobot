@@ -3,6 +3,7 @@ const { send, formatNumber, fixedNumber } = require('../utils/message');
 const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
 const { shortNanoId } = require('../utils/nanoid');
+const { getGroupMemberNames } = require('../utils/group');
 const { segment } = require('koishi-utils');
 const db = require('../utils/db');
 
@@ -57,7 +58,7 @@ const checkUser = async (session) => {
 };
 
 const getPositionsValue = async (userId) => {
-  const positions = userData[userId].positions;
+  const { positions } = userData[userId];
   if (!positions) {
     return 0;
   }
@@ -478,5 +479,63 @@ module.exports = async (ctx) => {
       )} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
     });
     await send(session, message);
+  });
+  ctx.command('group-rank', '查看群韭菜排行榜').action(async (_) => {
+    const { session } = _;
+    if (session.subtype !== 'group') {
+      return;
+    }
+    // get group users
+    const { groupId } = session;
+    const groupUsers = [];
+    Object.keys(userData).forEach((userId) => {
+      const user = userData[userId];
+      const { groupId: userGroupId } = user;
+      if (userGroupId === groupId) {
+        Object.assign(user, {
+          id: userId,
+        });
+        groupUsers.push(user);
+      }
+    });
+    if (!groupUsers.length) {
+      await send(session, '群里没有韭菜');
+      return;
+    }
+    // get all users account value
+    await Promise.all(groupUsers.map(async (user) => {
+      const { id } = user;
+      const positionsValue = await getPositionsValue(id);
+      if (positionsValue < 0) {
+        return;
+      }
+      Object.assign(user, {
+        totalValue: user.money + positionsValue,
+      });
+    }));
+    // build message
+    let message = '韭菜排行榜';
+    // sro
+    groupUsers.sort((a, b) => {
+      if (!a.totalValue && b.totalValue) {
+        return 1;
+      }
+      if (a.totalValue && !b.totalValue) {
+        return -1;
+      }
+      if (!a.totalValue && !b.totalValue) {
+        return 0;
+      }
+      return  b.totalValue - a.totalValue;
+    });
+    const memberNames = await getGroupMemberNames(session.bot, groupId);
+    groupUsers.forEach((user, index) => {
+      const profit = user.totalValue - INIT_MONEY;
+      const profitRate = profit / INIT_MONEY * 100;
+      const profitStr = `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}`;
+      const profitRateStr = `${profit >= 0 ? '+' : ''}${profitRate.toFixed(4)}%`;
+      message += `\n[${index + 1}] ${memberNames[user.id]} ${user.totalValue ? user.totalValue.toFixed(2) : '账户价值获取失败'}${user.totalValue ? ' ' + `${profitStr} (${profitRateStr})`: ''}`;
+    });
+    await session.send(message);
   });
 };
