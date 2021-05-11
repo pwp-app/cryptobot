@@ -396,7 +396,6 @@ module.exports = async (ctx) => {
     delete user.orders[orderId];
     await saveUserData();
     await send(session, `订单[${orderId}]已撤销`);
-
   });
   ctx.command('my-account', '查询模拟交易账户信息').action(async (_) => {
     const { session } = _;
@@ -461,9 +460,10 @@ module.exports = async (ctx) => {
       if (!position) {
         return;
       }
+      const value = price[symbol] ? ` (${(price[symbol] * position.amount).toFixed(2)} USDT)` : '';
       message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(position.amount)} / ${formatNumber(
         position.availableAmount
-      )}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
+      )}${value}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
@@ -513,16 +513,18 @@ module.exports = async (ctx) => {
       return;
     }
     // get all users account value
-    await Promise.all(groupUsers.map(async (user) => {
-      const { id } = user;
-      const positionsValue = await getPositionsValue(id);
-      if (positionsValue < 0) {
-        return;
-      }
-      Object.assign(user, {
-        totalValue: user.money + positionsValue,
-      });
-    }));
+    await Promise.all(
+      groupUsers.map(async (user) => {
+        const { id } = user;
+        const positionsValue = await getPositionsValue(id);
+        if (positionsValue < 0) {
+          return;
+        }
+        Object.assign(user, {
+          totalValue: user.money + positionsValue,
+        });
+      })
+    );
     // build message
     let message = '韭菜排行榜';
     // sro
@@ -536,15 +538,17 @@ module.exports = async (ctx) => {
       if (!a.totalValue && !b.totalValue) {
         return 0;
       }
-      return  b.totalValue - a.totalValue;
+      return b.totalValue - a.totalValue;
     });
     const memberNames = await getGroupMemberNames(session.bot, groupId);
     groupUsers.forEach((user, index) => {
       const profit = user.totalValue - INIT_MONEY;
-      const profitRate = profit / INIT_MONEY * 100;
+      const profitRate = (profit / INIT_MONEY) * 100;
       const profitStr = `${profit >= 0 ? '+' : ''}${profit.toFixed(2)}`;
       const profitRateStr = `${profit >= 0 ? '+' : ''}${profitRate.toFixed(4)}%`;
-      message += `\n[${index + 1}] ${memberNames[user.id]} ${user.totalValue ? user.totalValue.toFixed(2) : '账户价值获取失败'}${user.totalValue ? ' ' + `${profitStr} (${profitRateStr})`: ''}`;
+      message += `\n[${index + 1}] ${memberNames[user.id]} ${user.totalValue ? user.totalValue.toFixed(2) : '账户价值获取失败'}${
+        user.totalValue ? ' ' + `${profitStr} (${profitRateStr})` : ''
+      }`;
     });
     await session.send(message);
   });
