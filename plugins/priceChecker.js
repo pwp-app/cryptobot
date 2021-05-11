@@ -11,7 +11,7 @@ const { buildPriceMessage, formatNumber, send } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
-const coinTester = /^([A-Za-z]{2,}(\/?[A-Za-z]+)?(\?|\$|？|#|\*))$/;
+const coinTester = /^(\d?[A-Za-z]{2,5}(\d[A-Za-z]{1,2})?(\/?[A-Za-z]+)?(\?|\$|？|#|\*))$/;
 
 module.exports.name = 'crypto-price-checker';
 module.exports = (ctx) => {
@@ -33,7 +33,6 @@ module.exports = (ctx) => {
         }
       } catch (err) {
         console.error('Failed to fetch price.', err);
-        await send(session, '出现错误，无法获取数据');
         return next();
       }
       if (price) {
