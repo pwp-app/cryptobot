@@ -24,7 +24,7 @@ const getCoinNameByUSDTSymbol = (symbol) => {
   if (symbol.includes('/')) {
     return symbol.split('/')[0].toLowerCase();
   } else {
-    symbol.toLowerCase().replace('usdt', '');
+    return symbol.toLowerCase().replace('usdt', '');
   }
 };
 
@@ -60,7 +60,7 @@ const getLatestPrice = async (coin) => {
   let price;
   const { symbol } = getSymbol(coin);
   try {
-    if (HUOBI_LIST.includes(symbol)) {
+    if (HUOBI_LIST.includes(coin)) {
       price = await hFetchSpotPrice(symbol);
     } else {
       const fetched = binanceLatestPrices.get(symbol);
