@@ -1,11 +1,13 @@
 ﻿const { ONE_WEEK } = require('../constants/time');
 const { send, formatNumber, fixedNumber } = require('../utils/message');
-const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin } = require('../utils/coin');
+const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin, getPrecisions, getCoinNameByUSDTSymbol } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
 const { shortNanoId } = require('../utils/nanoid');
 const { getGroupMemberNames } = require('../utils/group');
+const { cutDecimalTail } = require('../utils/number');
 const { segment } = require('koishi-utils');
 const db = require('../utils/db');
+const HUOBI_LIST = require('../constants/huobiList');
 
 let userData = {};
 let futuresData = {};
@@ -262,6 +264,9 @@ module.exports = async (ctx) => {
     if (!checkUser(session)) {
       return;
     }
+    if (!amount || !coin) {
+      return;
+    }
     if (at && at !== 'at') {
       await send(session, '命令格式错误');
       return;
@@ -318,6 +323,9 @@ module.exports = async (ctx) => {
     if (!checkUser(session)) {
       return;
     }
+    if (!amount || !coin) {
+      return;
+    }
     if (at && at !== 'at') {
       await send(session, '命令格式错误');
       return;
@@ -370,6 +378,9 @@ module.exports = async (ctx) => {
   ctx.command('cancel-order <orderId>', '撤销模拟交易中的订单').action(async (_, orderId) => {
     const { session } = _;
     if (!checkUser(session)) {
+      return;
+    }
+    if (!orderId) {
       return;
     }
     const { userId } = session;
@@ -430,10 +441,37 @@ module.exports = async (ctx) => {
     }
     const { userId } = session;
     const { positions } = userData[userId];
-    const symbols = Object.keys(positions);
+    let symbols = Object.keys(positions);
     if (!symbols.length) {
       await send(session, '您当前没有任何持仓');
       return;
+    }
+    // check precisions
+    const binancePrecisions = await getPrecisions('binance');
+    if (binancePrecisions) {
+      symbols.forEach((symbol) => {
+        const position = positions[symbol];
+        if (!position) {
+          return;
+        }
+        const coinName = getCoinNameByUSDTSymbol(symbol);
+        if (HUOBI_LIST.includes(coinName)) {
+          return;
+        }
+        const precision = parseFloat(binancePrecisions[coinName], 10);
+        if (isNaN(precision)) {
+          return;
+        }
+        position.amount = parseFloat(cutDecimalTail(position.amount, precision), 10);
+        position.availableAmount = parseFloat(cutDecimalTail(position.availableAmount, precision), 10);
+        if (position.amount <= 0) {
+          positions[symbol] = null;
+          delete positions[symbol];
+        }
+      });
+      await saveUserData();
+      // reassign symbols
+      symbols = Object.keys(positions);
     }
     // fetch latest price data
     const price = {};

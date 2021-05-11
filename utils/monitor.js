@@ -2,7 +2,7 @@ const { EventEmitter } = require('events');
 const { setInterval, clearInterval } = require('timers');
 const { getSymbol, getLatestPriceBySymbol } = require('../utils/coin');
 
-const checkTick = 200;
+const checkTick = 166;
 
 const priceEvents = new EventEmitter();
 

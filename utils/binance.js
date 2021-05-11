@@ -33,6 +33,15 @@ const requestWith2Cost = limiter.throttle({
   thisArg: binance,
   cost: 2,
 });
+const requestWith10Cost = limiter.throttle({
+  requestFn: binance.request,
+  thisArg: binance,
+  cost: 10,
+});
+
+const fetchExchangeInfo = async () => {
+  return await requestWith10Cost('exchangeInfo', 'public', 'get');
+};
 
 const fetchSpotPrice = async (symbol) => {
   return await request('ticker/24hr', 'public', 'get', { symbol });
@@ -107,4 +116,5 @@ module.exports = {
   fetchTopLongShortAccount,
   fetchGlobalLongShortAccount,
   fetchDepth,
+  fetchExchangeInfo,
 };

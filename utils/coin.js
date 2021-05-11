@@ -1,12 +1,40 @@
-const { fetchSpotLatest, fetchAllSpotLatest, fetchSpotPrice } = require('../utils/binance');
+const { fetchSpotLatest, fetchAllSpotLatest, fetchSpotPrice, fetchExchangeInfo } = require('../utils/binance');
 const { hFetchSpotPrice } = require('../utils/huobi');
 const HUOBI_LIST = require('../constants/huobiList');
 const LatestPrices = require('./latestPrice');
 
 const availableCoins = {};
+const precisions = {};
+
 const binanceLatestPrices = new LatestPrices({
+  tick: 125,
   fetchFn: fetchAllSpotLatest,
 });
+
+const getPrecisions = async (exchange) => {
+  if (precisions[exchange]) {
+    return precisions[exchange];
+  }
+  if (exchange === 'binance') {
+    let res;
+    try {
+      res = await fetchExchangeInfo();
+    } catch (err) {
+      console.error('Failed to fetch binance exchange info.', err);
+      return null;
+    }
+    if (!res || !Array.isArray(res.symbols)) {
+      return null;
+    }
+    const map = {};
+    res.symbols.forEach((info) => {
+      map[info.baseAsset.toLowerCase()] = info.baseAssetPrecision;
+    });
+    precisions[exchange] = map;
+    return map;
+  }
+  return null;
+};
 
 const getSymbol = (coin) => {
   let coinName = coin.toLowerCase();
@@ -102,6 +130,8 @@ const getLatestPriceBySymbol = async (symbol) => {
 
 module.exports = {
   getSymbol,
+  getCoinNameByUSDTSymbol,
+  getPrecisions,
   checkCoin,
   getLatestPrice,
   getLatestPriceBySymbol,
