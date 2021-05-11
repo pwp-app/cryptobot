@@ -1,4 +1,5 @@
 ﻿const { ONE_WEEK } = require('../constants/time');
+const { ORDER_TYPES } = require('../constants/order');
 const { send, formatNumber, fixedNumber } = require('../utils/message');
 const { getLatestPrice, getLatestPriceBySymbol, getSymbol, checkCoin, getPrecisions, getCoinNameByUSDTSymbol } = require('../utils/coin');
 const { addMontior, removeMonitor } = require('../utils/monitor');
@@ -6,14 +7,17 @@ const { shortNanoId } = require('../utils/nanoid');
 const { getGroupMemberNames } = require('../utils/group');
 const { cutDecimalTail } = require('../utils/number');
 const { segment } = require('koishi-utils');
+const moment = require('moment');
 const db = require('../utils/db');
 const HUOBI_LIST = require('../constants/huobiList');
+
 
 let userData = {};
 let futuresData = {};
 let orderHandlers = {};
 
 const INIT_MONEY = 10000.0;
+const SPOT_FEE_RATE = 0.001;
 const STORE_KEY = 'sim_trade_data';
 
 const initUserData = async function () {
@@ -121,11 +125,27 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
           avgCost: (storedAmount * storedAvgCost + amount * price) / (storedAmount + amount),
         };
       }
+      const fee = consume * SPOT_FEE_RATE;
+      user.money -= fee;
+      user.availableMoney -= fee;
+      if (user.money <= 0) {
+        user.money = 0;
+      }
+      if (user.availableMoney <= 0) {
+        user.availableMoney = 0;
+      }
       user.orders[orderId] = null;
       delete user.orders[orderId];
+      addOrderHistory(userId, {
+        coin,
+        type: 'buyat',
+        price,
+        amount,
+        time: Date.now(),
+      });
       await saveUserData();
       removeMonitor(coin, handler);
-      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
+      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)}, fee: ${formatNumber(fee.toFixed(6))})`);
     } else if (type === 'sell' && lastPrice >= price) {
       const user = userData[userId];
       const { symbol } = getSymbol(coin);
@@ -144,14 +164,29 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
         position.amount = remainAmount;
       }
       // remove money
-      const selledMoney = price * amount;
+      let selledMoney = price * amount;
+      const fee = selledMoney * SPOT_FEE_RATE;
+      selledMoney = selledMoney - fee;
       user.money += selledMoney;
       user.availableMoney += selledMoney;
+      if (user.money <= 0) {
+        user.money = 0;
+      }
+      if (user.availableMoney <= 0) {
+        user.availableMoney = 0;
+      }
       user.orders[orderId] = null;
       delete user.orders[orderId];
+      addOrderHistory(userId, {
+        coin,
+        type: 'sellat',
+        price,
+        amount,
+        time: Date.now(),
+      });
       await saveUserData();
       removeMonitor(coin, handler);
-      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)})`);
+      await sendMessage(`订单[${orderId}]已成交 (${coin.toUpperCase()}, ${formatNumber(price)} * ${formatNumber(amount)}, fee: ${formatNumber(fee.toFixed(6))})`);
     }
   };
   addMontior(coin, handler);
@@ -231,6 +266,17 @@ const placeOrder = async (session, { type, coin, price, amount }) => {
   await send(session, '挂单成功');
 };
 
+const addOrderHistory = async (userId, order) => {
+  let { history } = userData[userId];
+  if (!history || !Array.isArray(history)) {
+    history = userData[userId].history = [];
+  }
+  history.unshift(order);
+  if (history.length > 10) {
+    history.pop();
+  }
+};
+
 module.exports.name = 'crypto-sim-trade';
 module.exports = async (ctx) => {
   await initUserData.call(ctx.bots[0]);
@@ -293,14 +339,22 @@ module.exports = async (ctx) => {
     // check account money
     const { userId } = session;
     const user = userData[userId];
-    const consumeAmount = latestPrice * parsedAmount;
+    let consumeAmount = latestPrice * parsedAmount;
     if (consumeAmount > user.money) {
       await send(session, `资金不足 (可用: ${user.availableMoney})`);
       return;
     }
     // consume money and add position
+    const fee = consumeAmount * SPOT_FEE_RATE;
+    consumeAmount += fee;
     user.money -= consumeAmount;
     user.availableMoney -= consumeAmount;
+    if (user.money <= 0) {
+      user.money = 0;
+    }
+    if (user.availableMoney <= 0) {
+      user.availableMoney = 0;
+    }
     if (!user.positions[symbol]) {
       user.positions[symbol] = {
         amount: parsedAmount,
@@ -315,8 +369,15 @@ module.exports = async (ctx) => {
         avgCost: (storedAmount * storedAvgCost + parsedAmount * latestPrice) / (storedAmount + parsedAmount),
       };
     }
+    addOrderHistory(userId, {
+      coin,
+      type: 'buy',
+      price: latestPrice,
+      amount: parsedAmount,
+      time: Date.now(),
+    });
     await saveUserData();
-    await send(session, `市价购入成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)})`);
+    await send(session, `市价购入成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)}, fee: ${formatNumber(fee.toFixed(6))})`);
   });
   ctx.command('sell <amount> <coin> [at] [price]', '模拟购买限价/市价卖出现货').action(async (_, amount, coin, at, price) => {
     const { session } = _;
@@ -369,11 +430,26 @@ module.exports = async (ctx) => {
       position.availableAmount = position.availableAmount - parsedAmount;
     }
     // remove money
-    const selledMoney = latestPrice * parsedAmount;
+    let selledMoney = latestPrice * parsedAmount;
+    const fee = selledMoney * SPOT_FEE_RATE;
+    selledMoney = selledMoney - fee;
     user.money += selledMoney;
     user.availableMoney += selledMoney;
+    if (user.money <= 0) {
+      user.money = 0;
+    }
+    if (user.availableMoney <= 0) {
+      user.availableMoney = 0;
+    }
+    addOrderHistory(userId, {
+      coin,
+      type: 'sell',
+      price: latestPrice,
+      amount: parsedAmount,
+      time: Date.now(),
+    });
     await saveUserData();
-    await send(session, `市价卖出成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)})`);
+    await send(session, `市价卖出成功 (${formatNumber(latestPrice)} * ${formatNumber(parsedAmount)}, fee: ${formatNumber(fee.toFixed(6))})`);
   });
   ctx.command('cancel-order <orderId>', '撤销模拟交易中的订单').action(async (_, orderId) => {
     const { session } = _;
@@ -525,6 +601,24 @@ module.exports = async (ctx) => {
       message += `\n[${index + 1}] ${order.type === 'buy' ? 'Buy' : 'Sell'} ${formatNumber(
         order.amount
       )} ${order.coin.toUpperCase()} at ${formatNumber(order.price)} (${order.id})`;
+    });
+    await send(session, message);
+  });
+  ctx.command('my-history', '查看我的历史订单（最近10单）').action(async (_) => {
+    const { session } = _;
+    if (!checkUser(session)) {
+      return;
+    }
+    const { userId } = session;
+    const { history } = userData[userId];
+    if (!history) {
+      await send(session, '您没有已成交的订单');
+      return;
+    }
+    let message = `您的订单历史:`;
+    history.forEach((item, index) => {
+      const { coin, price, amount, type, time } = item;
+      message += `\n[${index + 1}]${ORDER_TYPES[type]} ${coin.toUpperCase()} ${formatNumber(price.toFixed(2))} * ${formatNumber(amount)} (${moment(time).format('MM-DD HH:mm:ss')})`;
     });
     await send(session, message);
   });
