@@ -442,10 +442,6 @@ module.exports = async (ctx) => {
     const { userId } = session;
     const { positions } = userData[userId];
     let symbols = Object.keys(positions);
-    if (!symbols.length) {
-      await send(session, '您当前没有任何持仓');
-      return;
-    }
     // check precisions
     const binancePrecisions = await getPrecisions('binance');
     if (binancePrecisions) {
@@ -472,6 +468,10 @@ module.exports = async (ctx) => {
       await saveUserData();
       // reassign symbols
       symbols = Object.keys(positions);
+    }
+    if (!symbols.length) {
+      await send(session, '您当前没有任何持仓');
+      return;
     }
     // fetch latest price data
     const price = {};
