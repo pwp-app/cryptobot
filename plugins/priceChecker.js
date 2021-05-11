@@ -33,6 +33,7 @@ module.exports = (ctx) => {
         }
       } catch (err) {
         console.error('Failed to fetch price.', err);
+        await send(session, '数据获取失败');
         return next();
       }
       if (price) {
