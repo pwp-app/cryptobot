@@ -9,6 +9,7 @@ const db = require('../utils/db');
 
 let userData = {};
 let futuresData = {};
+let orderHandlers = {};
 
 const INIT_MONEY = 10000.0;
 const STORE_KEY = 'sim_trade_data';
@@ -152,6 +153,7 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
     }
   };
   addMontior(coin, handler);
+  orderHandlers[orderId] = handler;
 };
 
 const placeOrder = async (session, { type, coin, price, amount }) => {
@@ -383,10 +385,18 @@ module.exports = async (ctx) => {
       const { symbol } = getSymbol(order.coin);
       user.positions[symbol].availableAmount += order.amount;
     }
+    // remove handler
+    if (orderHandlers[orderId]) {
+      removeMonitor(order.coin, orderHandlers[orderId]);
+      orderHandlers[orderId] = null;
+      delete orderHandlers[orderId];
+    }
+    // remove order
     user.orders[orderId] = null;
     delete user.orders[orderId];
     await saveUserData();
     await send(session, `订单[${orderId}]已撤销`);
+
   });
   ctx.command('my-account', '查询模拟交易账户信息').action(async (_) => {
     const { session } = _;
