@@ -2,7 +2,7 @@ const { addMontior, removeMonitor } = require('../utils/monitor');
 const { checkCoin } = require('../utils/coin');
 const { send } = require('../utils/message');
 const { segment } = require('koishi-utils');
-const { nanoid } = require('../utils/nanoid');
+const { shortNanoId } = require('../utils/nanoid');
 const db = require('../utils/db');
 
 const storeKey = 'monitor_tasks';
@@ -20,13 +20,11 @@ const createMonitorTask = function ({ id, coin, type, price, userId, channelId }
   const sendMessage = async (coinPrice) => {
     await this.sendMessage(
       channelId,
-      `${
-        channelId.includes('private')
-          ? ''
-          : segment.at(userId)
-      }${coin.toUpperCase()} 已经${type === 'gt' ? '上涨' : '下跌'}至 ${coinPrice} (${price})`
+      `${channelId.includes('private') ? '' : segment.at(userId)}${coin.toUpperCase()} 已经${
+        type === 'gt' ? '上涨' : '下跌'
+      }至 ${coinPrice} (${price})`
     );
-  }
+  };
   const handler = async ({ price: coinPrice }) => {
     if ((type === 'gt' && coinPrice >= price) || (type === 'lt' && coinPrice <= price)) {
       removeMonitor(coin, handler);
@@ -41,18 +39,10 @@ const createMonitorTask = function ({ id, coin, type, price, userId, channelId }
 
 const initTasks = async function () {
   try {
-    const storedTasks = JSON.parse(await db.get(storeKey));
-    if (Array.isArray(storedTasks)) {
-      storedTasks.forEach((opts) => {
-        tasks[opts.id] = opts;
-        createMonitorTask.call(this, opts);
-      });
-    } else {
-      tasks = storedTasks;
-      Object.keys(tasks).forEach((taskId) => {
-        createMonitorTask.call(this, tasks[taskId]);
-      });
-    }
+    tasks = JSON.parse(await db.get(storeKey));
+    Object.keys(tasks).forEach((taskId) => {
+      createMonitorTask.call(this, tasks[taskId]);
+    });
   } catch (err) {
     if (!err.notFound) {
       throw err;
@@ -78,15 +68,15 @@ module.exports = async (ctx) => {
       return;
     }
     // check coin
-    if (!await checkCoin(coin)) {
+    if (!(await checkCoin(coin))) {
       await send(session, '有效性检查失败，请重试');
       return;
-    };
+    }
     // create a monitor task
     const { userId, channelId } = _.session;
-    let taskId = nanoid();
+    let taskId = shortNanoId();
     while (tasks[taskId]) {
-      taskId = nanoid();
+      taskId = shortNanoId();
     }
     const opts = {
       id: taskId,
