@@ -7,16 +7,12 @@ const db = require('../utils/db');
 
 const storeKey = 'monitor_tasks';
 
-let tasks = [];
-const taskMap = {};
+let tasks = {};
 
 const removeTask = (id) => {
-  for (let i = 0; i < tasks.length; i++) {
-    const task = tasks[i];
-    if (task.id === id) {
-      tasks.splice(i, 1);
-      break;
-    }
+  if (tasks[id]) {
+    tasks[id] = null;
+    delete tasks[id];
   }
 };
 
@@ -40,16 +36,23 @@ const createMonitorTask = function ({ id, coin, type, price, userId, channelId }
     }
   };
   addMontior(coin, handler);
-  taskMap[id] = true;
+  tasks[id].handler = handler;
 };
 
 const initTasks = async function () {
   try {
     const storedTasks = JSON.parse(await db.get(storeKey));
-    storedTasks.forEach((opts) => {
-      createMonitorTask.call(this, opts);
-    });
-    tasks = tasks.concat(storedTasks);
+    if (Array.isArray(storedTasks)) {
+      storedTasks.forEach((opts) => {
+        tasks[opts.id] = opts;
+        createMonitorTask.call(this, opts);
+      });
+    } else {
+      tasks = storedTasks;
+      Object.keys(tasks).forEach((taskId) => {
+        createMonitorTask.call(this, tasks[taskId]);
+      });
+    }
   } catch (err) {
     if (!err.notFound) {
       throw err;
@@ -82,7 +85,7 @@ module.exports = async (ctx) => {
     // create a monitor task
     const { userId, channelId } = _.session;
     let taskId = nanoid();
-    while (taskMap[taskId]) {
+    while (tasks[taskId]) {
       taskId = nanoid();
     }
     const opts = {
@@ -93,7 +96,7 @@ module.exports = async (ctx) => {
       userId,
       channelId,
     };
-    tasks.push(opts);
+    tasks[taskId] = opts;
     createMonitorTask.call(session.bot, opts);
     await db.supdate(storeKey, JSON.stringify(tasks));
     await await send(session, '价格提醒已创建');
@@ -102,7 +105,8 @@ module.exports = async (ctx) => {
     const { session } = _;
     const { userId } = session;
     const myTasks = [];
-    tasks.forEach((task) => {
+    Object.keys(tasks).forEach((taskId) => {
+      const task = tasks[taskId];
       if (task.userId === userId) {
         myTasks.push(task);
       }
@@ -124,18 +128,13 @@ module.exports = async (ctx) => {
   });
   ctx.command('remove-monitor <id>', '根据ID移除价格提醒').action(async (_, id) => {
     const { session } = _;
-    const task = taskMap[id];
+    const task = tasks[id];
     if (!task) {
       await send(session, '无法找到对应的价格提醒');
       return;
     }
-    task.stop();
-    for (let i = 0; i < tasks.length; i++) {
-      if (tasks[i].id === id) {
-        tasks.splice(i, 1);
-        break;
-      }
-    }
+    removeMonitor(task.coin, task.handler);
+    removeTask(id);
     await db.supdate(storeKey, JSON.stringify(tasks));
     await send(session, `价格提醒 [${id}] 已移除`);
   });
