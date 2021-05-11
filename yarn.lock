@@ -323,10 +323,10 @@
   "resolved" "https://registry.npmjs.org/catering/-/catering-2.0.0.tgz"
   "version" "2.0.0"
 
-"ccxt@^1.49.73":
-  "integrity" "sha512-XS67V8YTnpl4+hMBSGejcJ/KPBL8BvCM2yeygRWgpF+KUo1GOwIu1bwZhBiUbliyKKSfvvYjG6/0CHyUy+09dw=="
-  "resolved" "https://registry.npmjs.org/ccxt/-/ccxt-1.49.73.tgz"
-  "version" "1.49.73"
+"ccxt@^1.49.81":
+  "integrity" "sha512-CJ23y0m+70YPhGko3LKTZDzGhEYB4pg1jfzrWbzbBA5FSJ5qvEPdLy3+48by5kZuUxbAM4zeQHdqZuHgAt1+sw=="
+  "resolved" "https://registry.npmjs.org/ccxt/-/ccxt-1.49.81.tgz"
+  "version" "1.49.81"
 
 "chokidar@^3.5.1":
   "integrity" "sha512-9+s+Od+W0VJJzawDma/gvBNQqkTiqYTWLuZoyAsivsI4AaWTCzHG06/TMjsf1cYe9Cb97UCEhjz7HvnPk2p/tw=="
@@ -975,10 +975,10 @@
   "resolved" "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz"
   "version" "2.1.2"
 
-"nanoid@^3.1.22":
-  "integrity" "sha512-/2ZUaJX2ANuLtTvqTlgqBQNJoQO398KyJgZloL0PZkC0dpysjncRUPsFe3DUPzz/y3h+u7C46np8RMuvF3jsSQ=="
-  "resolved" "https://registry.npmjs.org/nanoid/-/nanoid-3.1.22.tgz"
-  "version" "3.1.22"
+"nanoid@^3.1.23":
+  "integrity" "sha512-FiB0kzdP0FFVGDKlRLEQ1BgDzU87dy5NnzjeW9YZNt+/c3+q82EQDUwniSAUxp/F0gFNI1ZhKU1FqYsMuqZVnw=="
+  "resolved" "https://registry.npmjs.org/nanoid/-/nanoid-3.1.23.tgz"
+  "version" "3.1.23"
 
 "napi-macros@~2.0.0":
   "integrity" "sha512-A0xLykHtARfueITVDernsAWdtIMbOJgKgcluwENp3AlsKN/PloyO10HtmoqnFAQAcxPkgZN7wdfPfEd0zNGxbg=="

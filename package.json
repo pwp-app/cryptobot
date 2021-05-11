@@ -16,13 +16,13 @@
   },
   "dependencies": {
     "@backrunner/levelatomic": "^0.1.0",
-    "ccxt": "^1.49.73",
+    "ccxt": "^1.49.81",
     "koishi-adapter-onebot": "^3.0.8",
     "levelatomic": "file:../levelatomic",
     "leveldown": "^6.0.0",
     "levelup": "^5.0.0",
     "moment": "^2.29.1",
-    "nanoid": "^3.1.22",
+    "nanoid": "^3.1.23",
     "pngjs": "^6.0.0",
     "puppeteer": "^9.1.1"
   }
