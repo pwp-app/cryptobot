@@ -43,7 +43,7 @@ const getSymbol = (coin) => {
     coinName = symbol.split('/')[0];
     symbol = symbol.replace('/', '');
   } else {
-    symbol = `${coin}usdt`;
+    symbol = `${coinName}usdt`;
   }
   return { coinName, symbol };
 };
