@@ -11,7 +11,7 @@ const { buildPriceMessage, formatNumber, send } = require('../utils/message');
 const { getSymbol } = require('../utils/coin');
 const HUOBI_LIST = require('../constants/huobiList');
 
-const coinTester = /^(\d?[A-Za-z]{2,5}(\d[A-Za-z]{1,2})?(\/?[A-Za-z]+)?(\?|\$|？|#|\*))$/;
+const coinTester = /^(\d?[A-Za-z]{2,5}(\d[A-Za-z]{1,2})?(\/?[A-Za-z]{3,5})?(\?|\$|？|#|\*))$/;
 
 module.exports.name = 'crypto-price-checker';
 module.exports = (ctx) => {
