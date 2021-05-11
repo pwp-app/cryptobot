@@ -31,17 +31,18 @@ module.exports.name = 'crypto-star-list';
 module.exports = async (ctx) => {
   await initStars();
   ctx.command('star <coin>', '将某个币添加至关注').action(async (_, coin) => {
-    const { session } = _
+    const { session } = _;
     const { userId } = session;
     // try to fetch price
-    if (!await checkCoin(coin)) {
+    if (!(await checkCoin(coin))) {
       await send(session, '有效性检查失败，请重试');
       return;
-    };
+    }
     // add to star
     if (!stars[userId]) {
       stars[userId] = [];
     }
+    const { coinName } = getSymbol(coin);
     if (stars[userId].includes(coinName)) {
       await send(session, '您已经关注了这个币');
       return;
