@@ -420,7 +420,7 @@ module.exports = async (ctx) => {
       session,
       `您的账户信息:\n总价值: ${userValue.toFixed(2)} USDT\n总资金: ${user.money.toFixed(2)} USDT\n可用资金: ${user.availableMoney.toFixed(
         2
-      )} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(5)}%)`
+      )} USDT\n收益: ${(userValue - INIT_MONEY).toFixed(2)} USDT (${(((user.money + positionsValue - INIT_MONEY) / INIT_MONEY) * 100).toFixed(4)}%)`
     );
   });
   ctx.command('my-positions', '查询模拟交易持仓').action(async (_) => {
