@@ -11,6 +11,7 @@ const binanceOpts = {
   apiKey,
   secret,
   countries: ['CN'],
+  enableRateLimit: false,
 };
 
 let binance;
