@@ -323,10 +323,10 @@
   "resolved" "https://registry.npmjs.org/catering/-/catering-2.0.0.tgz"
   "version" "2.0.0"
 
-"ccxt@^1.49.81":
-  "integrity" "sha512-CJ23y0m+70YPhGko3LKTZDzGhEYB4pg1jfzrWbzbBA5FSJ5qvEPdLy3+48by5kZuUxbAM4zeQHdqZuHgAt1+sw=="
-  "resolved" "https://registry.npmjs.org/ccxt/-/ccxt-1.49.81.tgz"
-  "version" "1.49.81"
+"ccxt@^1.49.83":
+  "integrity" "sha512-crxGydqQmDCNyN2Qfv6x7bJt2KPS7I77Ie1gvNhI8crpM62Vk5ovp3hG7Th8uIrVNGYFq/Qugfl7CI17q4iF6A=="
+  "resolved" "https://registry.npmjs.org/ccxt/-/ccxt-1.49.83.tgz"
+  "version" "1.49.83"
 
 "chokidar@^3.5.1":
   "integrity" "sha512-9+s+Od+W0VJJzawDma/gvBNQqkTiqYTWLuZoyAsivsI4AaWTCzHG06/TMjsf1cYe9Cb97UCEhjz7HvnPk2p/tw=="
