@@ -577,7 +577,6 @@ module.exports = async (ctx) => {
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
-    console.log(message);
     await send(session, message);
   });
   ctx.command('my-orders', '查询模拟交易订单').action(async (_) => {
