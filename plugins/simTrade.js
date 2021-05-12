@@ -615,7 +615,7 @@ module.exports = async (ctx) => {
     let message = `您的订单历史:`;
     history.forEach((item, index) => {
       const { coin, price, amount, type, time } = item;
-      message += `\n[${index + 1}]${ORDER_TYPES[type]} ${coin.toUpperCase()} ${formatNumber(price.toFixed(2))} * ${formatNumber(amount)} (${moment(time).format('MM-DD HH:mm:ss')})`;
+      message += `\n[${index + 1}]${ORDER_TYPES[type]} ${coin.toUpperCase()} ${formatNumber(price)} * ${formatNumber(amount)} (${moment(time).format('MM-DD HH:mm:ss')})`;
     });
     await send(session, message);
   });
