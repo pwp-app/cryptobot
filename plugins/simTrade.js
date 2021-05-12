@@ -159,8 +159,6 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
         user.positions[symbol] = null;
         delete user.positions[symbol];
       } else {
-        // calc avg cost
-        position.avgCost = (position.amount * position.avgCost - amount * price) / remainAmount;
         position.amount = remainAmount;
       }
       // remove money
@@ -424,8 +422,6 @@ module.exports = async (ctx) => {
       user.positions[symbol] = null;
       delete user.positions[symbol];
     } else {
-      // calc avg cost
-      position.avgCost = (position.amount * position.avgCost - parsedAmount * latestPrice) / remainAmount;
       position.amount = remainAmount;
       position.availableAmount = position.availableAmount - parsedAmount;
     }
@@ -577,10 +573,11 @@ module.exports = async (ctx) => {
       const value = price[symbol] ? ` (${(price[symbol] * position.amount).toFixed(2)} USDT)` : '';
       message += `\n[${index + 1}] ${symbol.toUpperCase().replace('USDT', '')}\n总数/可用: ${formatNumber(position.amount)} / ${formatNumber(
         position.availableAmount
-      )}${value}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n未实现盈亏: ${
+      )}${value}\n现价/平均成本: ${price[symbol] || 'Failed'} / ${fixedNumber(formatNumber(position.avgCost))}\n持仓收益: ${
         price[symbol] ? ((price[symbol] - position.avgCost) * position.amount).toFixed(2) : 'Failed'
       } USDT (${price[symbol] ? (((price[symbol] - position.avgCost) / position.avgCost) * 100).toFixed(2) + '%' : 'Failed'})`;
     });
+    console.log(message);
     await send(session, message);
   });
   ctx.command('my-orders', '查询模拟交易订单').action(async (_) => {
