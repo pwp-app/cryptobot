@@ -107,26 +107,27 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
     // deal
     if (type === 'buy' && lastPrice <= price) {
       const user = userData[userId];
-      const consume = price * amount;
-      user.money -= consume;
       const { symbol } = getSymbol(coin);
       const position = user.positions[symbol];
+      const consume = price * amount;
+      const fee = consume * SPOT_FEE_RATE;
+      // calc positions
       if (!position) {
         user.positions[symbol] = {
           amount,
           availableAmount: amount,
-          avgCost: price,
+          avgCost: (price * amount + fee) / amount,
         };
       } else {
         const { amount: storedAmount, avgCost: storedAvgCost, availableAmount: storedAvailableAmount } = user.positions[symbol];
         user.positions[symbol] = {
           amount: storedAmount + amount,
           availableAmount: storedAvailableAmount + amount,
-          avgCost: (storedAmount * storedAvgCost + amount * price) / (storedAmount + amount),
+          avgCost: (storedAmount * storedAvgCost + amount * price + fee) / (storedAmount + amount),
         };
       }
-      const fee = consume * SPOT_FEE_RATE;
-      user.money -= fee;
+      // consume money
+      user.money -= (consume + fee);
       user.availableMoney -= fee;
       if (user.money <= 0) {
         user.money = 0;
@@ -161,7 +162,7 @@ const addOrderMonitor = function ({ id: orderId, userId, coin, type, price, amou
       } else {
         position.amount = remainAmount;
       }
-      // remove money
+      // add user money
       let selledMoney = price * amount;
       const fee = selledMoney * SPOT_FEE_RATE;
       selledMoney = selledMoney - fee;
@@ -337,16 +338,16 @@ module.exports = async (ctx) => {
     // check account money
     const { userId } = session;
     const user = userData[userId];
-    let consumeAmount = latestPrice * parsedAmount;
-    if (consumeAmount > user.money) {
+    let consumeMoney = latestPrice * parsedAmount;
+    if (consumeMoney > user.money) {
       await send(session, `资金不足 (可用: ${user.availableMoney})`);
       return;
     }
     // consume money and add position
-    const fee = consumeAmount * SPOT_FEE_RATE;
-    consumeAmount += fee;
-    user.money -= consumeAmount;
-    user.availableMoney -= consumeAmount;
+    const fee = consumeMoney * SPOT_FEE_RATE;
+    consumeMoney += fee;
+    user.money -= consumeMoney;
+    user.availableMoney -= consumeMoney;
     if (user.money <= 0) {
       user.money = 0;
     }
@@ -357,14 +358,14 @@ module.exports = async (ctx) => {
       user.positions[symbol] = {
         amount: parsedAmount,
         availableAmount: parsedAmount,
-        avgCost: latestPrice,
+        avgCost: latestPrice + fee / parsedAmount,
       };
     } else {
       const { amount: storedAmount, avgCost: storedAvgCost, availableAmount: storedAvailableAmount } = user.positions[symbol];
       user.positions[symbol] = {
         amount: storedAmount + parsedAmount,
         availableAmount: storedAvailableAmount + parsedAmount,
-        avgCost: (storedAmount * storedAvgCost + parsedAmount * latestPrice) / (storedAmount + parsedAmount),
+        avgCost: (storedAmount * storedAvgCost + parsedAmount * latestPrice + fee) / (storedAmount + parsedAmount),
       };
     }
     addOrderHistory(userId, {
